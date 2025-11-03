@@ -1,7 +1,7 @@
 <template>
   <div class="chart-container glass-card">
     <div class="chart-header">
-      <h3 class="chart-title">Engagement por Video</h3>
+      <h3 class="chart-title">Engagement by Video</h3>
       <div class="chart-controls">
         <select v-model="topLimit" @change="updateChart" class="select-modern">
           <option value="5">Top 5</option>
@@ -79,22 +79,27 @@ const createChart = () => {
     chartInstance = null;
   }
 
+  // Colores desde variables CSS
+  const styles = getComputedStyle(document.documentElement);
+  const accent = styles.getPropertyValue('--accent-primary').trim() || '#ffd60a';
+  const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '255, 214, 10';
+
   // Crear gradiente para las barras
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, 'rgba(77, 255, 145, 0.8)');
-  gradient.addColorStop(1, 'rgba(77, 255, 145, 0.1)');
+  gradient.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
+  gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
 
   chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       // Usar NombreCampana en el eje Y
-      labels: limitedVideos.map(v => v.campaign || v.label || 'Sin nombre'),
+      labels: limitedVideos.map(v => v.campaign || v.label || 'Untitled'),
       datasets: [
         {
           label: 'Engagement (%)',
           data: limitedVideos.map(v => v.engagement),
           backgroundColor: gradient,
-          borderColor: '#4dff91',
+          borderColor: accent,
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -120,7 +125,7 @@ const createChart = () => {
           callbacks: {
             title: function(context) {
               const video = limitedVideos[context[0].dataIndex];
-              const campaignName = video.campaign || video.label || 'Sin nombre';
+              const campaignName = video.campaign || video.label || 'Untitled';
               return campaignName.length > 50 ? 
                 campaignName.substring(0, 50) + '...' : 
                 campaignName;
@@ -129,9 +134,9 @@ const createChart = () => {
               const video = limitedVideos[context.dataIndex];
               return [
                 `Engagement: ${video.engagement}%`,
-                `Views: ${video.views.toLocaleString('es-ES')}`,
-                `Likes: ${video.likes.toLocaleString('es-ES')}`,
-                `Comments: ${video.comments.toLocaleString('es-ES')}`,
+                `Views: ${video.views.toLocaleString('en-US')}`,
+                `Likes: ${video.likes.toLocaleString('en-US')}`,
+                `Comments: ${video.comments.toLocaleString('en-US')}`,
                 video.fullLabel ? `URL: ${video.fullLabel}` : ''
               ];
             }
@@ -167,7 +172,7 @@ const createChart = () => {
         y: {
           title: {
             display: true,
-            text: 'Campaña',
+            text: 'Campaign',
             color: '#a8b0c1',
             font: {
               size: 12,
@@ -186,7 +191,7 @@ const createChart = () => {
             // Truncar nombres largos en el eje Y
             callback: function(value, index) {
               const video = limitedVideos[index];
-              const campaignName = video.campaign || video.label || 'Sin nombre';
+              const campaignName = video.campaign || video.label || 'Untitled';
               if (campaignName.length > 30) {
                 return campaignName.substring(0, 30) + '...';
               }
@@ -262,7 +267,7 @@ onBeforeUnmount(() => {
 }
 
 .select-modern {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 0.25rem 1rem;;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);

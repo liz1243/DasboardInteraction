@@ -9,6 +9,7 @@ import 'bootstrap/dist/css/bootstrap-utilities.min.css';
 
 // Estilos personalizados
 import './styles/variables.css';
+import './styles/base.css';
 import './styles/dashboard.css';
 
 const app = createApp(App);

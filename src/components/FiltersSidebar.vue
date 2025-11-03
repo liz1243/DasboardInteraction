@@ -15,7 +15,7 @@
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            <span>Cliente</span>
+            <span>Client</span>
             <span v-if="localFilters.client !== 'all'" class="filter-badge">
               {{ localFilters.client }}
             </span>
@@ -29,7 +29,7 @@
               :class="['dropdown-item', { 'dropdown-item-active': localFilters.client === 'all' }]"
               type="button"
             >
-              Todos los clientes
+              All clients
             </button>
             <button 
               v-for="client in availableClients" 
@@ -54,7 +54,7 @@
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span>Talento</span>
+            <span>Talent</span>
             <span v-if="localFilters.talent !== 'all'" class="filter-badge">
               {{ localFilters.talent }}
             </span>
@@ -68,7 +68,7 @@
               :class="['dropdown-item', { 'dropdown-item-active': localFilters.talent === 'all' }]"
               type="button"
             >
-              Todos los talentos
+              All talents
             </button>
             <button 
               v-for="talent in availableTalents" 
@@ -95,8 +95,8 @@
               <line x1="8" y1="2" x2="8" y2="6"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
-            <span>Fechas</span>
-            <span v-if="hasDateFilter" class="filter-badge">Filtrado</span>
+            <span>Dates</span>
+            <span v-if="hasDateFilter" class="filter-badge">Filtered</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -104,7 +104,7 @@
           <div v-if="activeDropdown === 'dates'" class="dropdown-menu dropdown-menu-large">
             <div class="dropdown-dates">
               <div class="date-input-group">
-                <label>Desde</label>
+                <label>From</label>
                 <input
                   type="date"
                   v-model="localFilters.dateStart"
@@ -113,7 +113,7 @@
                 />
               </div>
               <div class="date-input-group">
-                <label>Hasta</label>
+                <label>To</label>
                 <input
                   type="date"
                   v-model="localFilters.dateEnd"
@@ -137,8 +137,8 @@
               <line x1="12" y1="20" x2="12" y2="4"></line>
               <line x1="6" y1="20" x2="6" y2="14"></line>
             </svg>
-            <span>Métricas</span>
-            <span v-if="hasMetricsFilter" class="filter-badge">Filtrado</span>
+            <span>Metrics</span>
+            <span v-if="hasMetricsFilter" class="filter-badge">Filtered</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -146,32 +146,32 @@
           <div v-if="activeDropdown === 'metrics'" class="dropdown-menu dropdown-menu-large">
             <div class="dropdown-metrics">
               <div class="metric-input-group">
-                <label>Views Mín.</label>
+                <label>Min Views</label>
                 <input
                   type="number"
                   v-model.number="localFilters.viewsMin"
                   @input="updateFilters"
-                  placeholder="Ej: 1000"
+                  placeholder="e.g. 1000"
                   class="input-number"
                 />
               </div>
               <div class="metric-input-group">
-                <label>Likes Mín.</label>
+                <label>Min Likes</label>
                 <input
                   type="number"
                   v-model.number="localFilters.likesMin"
                   @input="updateFilters"
-                  placeholder="Ej: 50"
+                  placeholder="e.g. 50"
                   class="input-number"
                 />
               </div>
               <div class="metric-input-group">
-                <label>Engagement Mín. (%)</label>
+                <label>Min Engagement (%)</label>
                 <input
                   type="number"
                   v-model.number="localFilters.engagementMin"
                   @input="updateFilters"
-                  placeholder="Ej: 5"
+                  placeholder="e.g. 5"
                   step="0.1"
                   class="input-number"
                 />
@@ -191,7 +191,7 @@
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
           </svg>
-          <span>Limpiar</span>
+          <span>Clear</span>
         </button>
       </div>
     </div>

@@ -70,43 +70,56 @@ function excelSerialToDate(serial) {
  */
 export function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
+    const isCsv = file && (file.type === 'text/csv' || /\.csv$/i.test(file.name || ''));
     const reader = new FileReader();
 
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target.result);
-        // Leer el Excel sin forzar conversión de fechas
-        const workbook = XLSX.read(data, { 
-          type: 'array',
-          cellDates: false, // No forzar conversión, manejamos nosotros
-          cellNF: false,
-          cellText: false
-        });
-        
+        let workbook;
+        if (isCsv) {
+          // CSV: leer como texto y parsear como string
+          const text = e.target.result;
+          workbook = XLSX.read(text, {
+            type: 'string',
+            raw: true
+          });
+        } else {
+          // Excel: leer como ArrayBuffer
+          const data = new Uint8Array(e.target.result);
+          workbook = XLSX.read(data, {
+            type: 'array',
+            cellDates: false,
+            cellNF: false,
+            cellText: false
+          });
+        }
+
         // Obtener la primera hoja
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        
+
         // Convertir a JSON - usar raw: true para obtener valores originales
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          raw: true, // Usar valores raw para preservar strings
-          defval: null // Valor por defecto para celdas vacías
+          raw: true,
+          defval: null
         });
-        
-        // Normalizar nombres de columnas y convertir fechas
+
         const normalizedData = normalizeData(jsonData);
-        
         resolve(normalizedData);
       } catch (error) {
-        reject(new Error('Error al procesar el archivo Excel: ' + error.message));
+        reject(new Error('Error processing the file: ' + error.message));
       }
     };
 
     reader.onerror = () => {
-      reject(new Error('Error al leer el archivo'));
+      reject(new Error('Error reading the file'));
     };
 
-    reader.readAsArrayBuffer(file);
+    if (isCsv) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
   });
 }
 
@@ -149,7 +162,7 @@ function normalizeData(data) {
  */
 export function validateExcelColumns(data) {
   if (!data || data.length === 0) {
-    return { valid: false, message: 'El archivo Excel está vacío' };
+    return { valid: false, message: 'The file is empty' };
   }
 
   const firstRow = data[0];
@@ -186,7 +199,7 @@ export function validateExcelColumns(data) {
   if (missingColumns.length > 0) {
     return {
       valid: false,
-      message: `Faltan las siguientes columnas: ${missingColumns.join(', ')}`
+      message: `Missing required columns: ${missingColumns.join(', ')}`
     };
   }
 

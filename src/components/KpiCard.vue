@@ -53,14 +53,14 @@ const formattedValue = computed(() => {
 
   switch (props.format) {
     case 'percentage':
-      return `${numValue.toLocaleString('es-ES')}%`;
+      return `${numValue.toLocaleString('en-US')}%`;
     case 'currency':
-      return new Intl.NumberFormat('es-ES', {
+      return new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'EUR'
+        currency: 'USD'
       }).format(numValue);
     default:
-      return numValue.toLocaleString('es-ES');
+      return numValue.toLocaleString('en-US');
   }
 });
 </script>
@@ -120,7 +120,7 @@ const formattedValue = computed(() => {
 }
 
 .kpi-value {
-  font-size: 2.5rem;
+  font-size: 2.0rem;
   font-weight: 700;
   line-height: 1;
   margin-bottom: var(--spacing-sm);

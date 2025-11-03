@@ -47,7 +47,7 @@ export function groupByDate(campaigns) {
   const grouped = {};
 
   campaigns.forEach(campaign => {
-    const date = campaign.entregables_fecha || 'Sin fecha';
+    const date = campaign.entregables_fecha || 'No date';
     
     if (!grouped[date]) {
       grouped[date] = {
@@ -100,7 +100,7 @@ export function groupByClient(campaigns) {
   const grouped = {};
 
   campaigns.forEach(campaign => {
-    const client = campaign.NombreCliente || 'Sin cliente';
+    const client = campaign.NombreCliente || 'No client';
     
     if (!grouped[client]) {
       grouped[client] = {
@@ -351,8 +351,8 @@ export function getEngagementByVideo(campaigns) {
     return {
       label: campaign.entregables_URL ? 
         campaign.entregables_URL.substring(campaign.entregables_URL.length - 11) : 
-        campaign.NombreCampana || 'Sin nombre',
-      fullLabel: campaign.entregables_URL || campaign.NombreCampana || 'Sin nombre',
+        campaign.NombreCampana || 'Untitled',
+      fullLabel: campaign.entregables_URL || campaign.NombreCampana || 'Untitled',
       views,
       likes,
       comments,

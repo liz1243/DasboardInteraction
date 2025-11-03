@@ -1,8 +1,8 @@
 <template>
   <div class="upload-container glass-card">
     <div class="upload-header">
-      <h3 class="upload-title">Cargar Datos de Campañas</h3>
-      <p class="upload-description">Sube un archivo Excel con los datos de tus campañas</p>
+      <h3 class="upload-title">Upload Campaign Data</h3>
+      <p class="upload-description">Upload an Excel file with your campaigns data</p>
     </div>
 
     <div
@@ -30,10 +30,10 @@
           </svg>
         </div>
         <p class="dropzone-text">
-          <span class="dropzone-text-main">Arrastra tu archivo aquí</span>
-          <span class="dropzone-text-sub">o haz clic para seleccionar</span>
+          <span class="dropzone-text-main">Drag your file here</span>
+          <span class="dropzone-text-sub">or click to select</span>
         </p>
-        <p class="dropzone-hint">Archivos soportados: .xlsx, .xls, .csv</p>
+        <p class="dropzone-hint">Supported files: .xlsx, .xls, .csv</p>
       </div>
     </div>
 
@@ -74,7 +74,7 @@
       type="button"
     >
       <span v-if="loading" class="spinner"></span>
-      <span v-else>Procesar Archivo</span>
+      <span v-else>Process File</span>
     </button>
   </div>
 </template>
@@ -144,7 +144,7 @@ const handleUpload = async () => {
   try {
     emit('upload', selectedFile.value);
   } catch (err) {
-    error.value = err.message || 'Error al procesar el archivo';
+    error.value = err.message || 'Error processing the file';
   } finally {
     loading.value = false;
   }

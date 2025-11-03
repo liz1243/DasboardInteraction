@@ -1,23 +1,23 @@
 <template>
   <div class="filters-panel glass-card">
     <div class="filters-header">
-      <h3 class="filters-title">Filtros</h3>
+      <h3 class="filters-title">Filters</h3>
       <button @click="clearFilters" class="btn-clear" type="button">
-        Limpiar
+        Clear
       </button>
     </div>
 
     <div class="filters-content">
       <div class="row g-3">
-        <!-- Filtro por Mes -->
+        <!-- Month filter -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Mes</label>
+          <label class="filter-label">Month</label>
           <select 
             v-model="localFilters.month"
             @change="updateFilters"
             class="input-modern"
           >
-            <option value="all">Todos los meses</option>
+            <option value="all">All months</option>
             <option 
               v-for="month in availableMonths" 
               :key="month.value"
@@ -28,15 +28,15 @@
           </select>
         </div>
 
-        <!-- Filtro por Campaña -->
+        <!-- Campaign filter -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Campaña</label>
+          <label class="filter-label">Campaign</label>
           <select 
             v-model="localFilters.campaign"
             @change="updateFilters"
             class="input-modern"
           >
-            <option value="all">Todas las campañas</option>
+            <option value="all">All campaigns</option>
             <option 
               v-for="campaign in availableCampaigns" 
               :key="campaign"
@@ -49,82 +49,80 @@
 
         <!-- Filtro Views Min -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Views Mín.</label>
+          <label class="filter-label">Min Views</label>
           <input
             type="number"
             v-model.number="localFilters.viewsMin"
             @input="updateFilters"
-            placeholder="Ej: 1000"
+            placeholder="e.g. 1000"
             class="input-modern"
           />
         </div>
 
         <!-- Filtro Views Max -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Views Máx.</label>
+          <label class="filter-label">Max Views</label>
           <input
             type="number"
             v-model.number="localFilters.viewsMax"
             @input="updateFilters"
-            placeholder="Ej: 50000"
+            placeholder="e.g. 50000"
             class="input-modern"
           />
         </div>
 
         <!-- Filtro Likes Min -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Likes Mín.</label>
+          <label class="filter-label">Min Likes</label>
           <input
             type="number"
             v-model.number="localFilters.likesMin"
             @input="updateFilters"
-            placeholder="Ej: 50"
+            placeholder="e.g. 50"
             class="input-modern"
           />
         </div>
 
         <!-- Filtro Likes Max -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Likes Máx.</label>
+          <label class="filter-label">Max Likes</label>
           <input
             type="number"
             v-model.number="localFilters.likesMax"
             @input="updateFilters"
-            placeholder="Ej: 5000"
+            placeholder="e.g. 5000"
             class="input-modern"
           />
         </div>
 
         <!-- Filtro Comments Min -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Comments Mín.</label>
+          <label class="filter-label">Min Comments</label>
           <input
             type="number"
             v-model.number="localFilters.commentsMin"
             @input="updateFilters"
-            placeholder="Ej: 10"
+            placeholder="e.g. 10"
             class="input-modern"
           />
         </div>
 
         <!-- Filtro Comments Max -->
         <div class="col-md-6 col-lg-3">
-          <label class="filter-label">Comments Máx.</label>
+          <label class="filter-label">Max Comments</label>
           <input
             type="number"
             v-model.number="localFilters.commentsMax"
             @input="updateFilters"
-            placeholder="Ej: 1000"
+            placeholder="e.g. 1000"
             class="input-modern"
           />
         </div>
       </div>
 
-      <!-- Resumen de resultados -->
+      <!-- Results summary -->
       <div class="filters-summary" v-if="filteredCount !== totalCount">
-        <span class="summary-text">
-          Mostrando {{ filteredCount }} de {{ totalCount }} videos
-        </span>
+        <span class="summary-text">Showing {{ filteredCount }} of {{ totalCount }} videos</span>
       </div>
     </div>
   </div>

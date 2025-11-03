@@ -4,7 +4,7 @@
       <h3 class="chart-title">Engagement Rate</h3>
       <div class="chart-badge">
         <span class="badge-value">{{ averageEngagement }}%</span>
-        <span class="badge-label">Promedio</span>
+        <span class="badge-label">Average</span>
       </div>
     </div>
     <div class="chart-wrapper">
@@ -78,10 +78,15 @@ const createChart = () => {
     chartInstance = null;
   }
 
-  // Gradiente para las barras
+  // Theme colors
+  const styles = getComputedStyle(document.documentElement);
+  const accent = styles.getPropertyValue('--accent-primary').trim() || '#fdc600';
+  const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '253, 198, 0';
+
+  // Gradient for bars (yellow)
   const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, 'rgba(77, 255, 145, 0.8)');
-  gradient.addColorStop(1, 'rgba(77, 255, 145, 0.1)');
+  gradient.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
+  gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
 
   chartInstance = new Chart(ctx, {
     type: 'bar',
@@ -92,7 +97,7 @@ const createChart = () => {
           label: 'Engagement Rate (%)',
           data: props.engagement,
           backgroundColor: gradient,
-          borderColor: '#4dff91',
+          borderColor: accent,
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -212,8 +217,8 @@ onBeforeUnmount(() => {
 .badge-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--accent-green);
-  text-shadow: 0 0 10px rgba(77, 255, 145, 0.5);
+  color: var(--accent-primary);
+  text-shadow: 0 0 10px rgba(var(--accent-primary-rgb), 0.5);
   line-height: 1;
 }
 

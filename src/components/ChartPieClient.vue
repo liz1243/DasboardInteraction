@@ -1,8 +1,8 @@
 <template>
   <div class="chart-container glass-card">
     <div class="chart-header">
-      <h3 class="chart-title">Distribución por Cliente</h3>
-      <p class="chart-subtitle">Views totales por cliente</p>
+      <h3 class="chart-title">Client Distribution</h3>
+      <p class="chart-subtitle">Total views by client</p>
     </div>
     <div class="chart-wrapper">
       <canvas ref="chartCanvas"></canvas>
@@ -41,28 +41,13 @@ const props = defineProps({
 const chartCanvas = ref(null);
 let chartInstance = null;
 
-// Colores neón para las porciones
-const neonColors = [
-  'rgba(0, 234, 255, 0.8)',   // Cyan
-  'rgba(255, 123, 247, 0.8)', // Pink
-  'rgba(77, 255, 145, 0.8)',  // Green
-  'rgba(91, 141, 239, 0.8)',  // Blue
-  'rgba(255, 193, 7, 0.8)',   // Yellow
-  'rgba(255, 107, 107, 0.8)', // Red
-  'rgba(161, 136, 255, 0.8)', // Purple
-  'rgba(255, 159, 64, 0.8)'   // Orange
-];
-
-const borderColors = [
-  '#00eaff',
-  '#ff7bf7',
-  '#4dff91',
-  '#5b8def',
-  '#ffc107',
-  '#ff6b6b',
-  '#a188ff',
-  '#ff9f40'
-];
+// Theme yellow shades for slices (increasing opacity per slice)
+const getThemeColors = () => {
+  const styles = getComputedStyle(document.documentElement);
+  const accent = (styles.getPropertyValue('--accent-primary').trim() || '#fdc600');
+  const accentRgb = (styles.getPropertyValue('--accent-primary-rgb').trim() || '253, 198, 0');
+  return { accent, accentRgb };
+};
 
 const createChart = () => {
   if (!chartCanvas.value) return;
@@ -86,14 +71,16 @@ const createChart = () => {
     chartInstance = null;
   }
 
-  // Generar colores para cada segmento
-  const backgroundColors = props.labels.map((_, index) => 
-    neonColors[index % neonColors.length]
-  );
-  
-  const borderColorsArray = props.labels.map((_, index) => 
-    borderColors[index % borderColors.length]
-  );
+  // Generate yellow shades for each segment with increasing opacity
+  const { accent, accentRgb } = getThemeColors();
+  const totalSegments = props.labels.length || 1;
+  const backgroundColors = props.labels.map((_, index) => {
+    const t = totalSegments > 1 ? index / (totalSegments - 1) : 1; // 0..1
+    const alpha = Math.min(0.9, 0.35 + t * 0.55); // 0.35 → 0.9
+    return `rgba(${accentRgb}, ${alpha})`;
+  });
+
+  const borderColorsArray = props.labels.map(() => accent);
 
   chartInstance = new Chart(ctx, {
     type: 'pie',
@@ -140,7 +127,7 @@ const createChart = () => {
               const value = context.parsed || 0;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
               const percentage = ((value / total) * 100).toFixed(1);
-              return `${label}: ${value.toLocaleString('es-ES')} (${percentage}%)`;
+              return `${label}: ${value.toLocaleString('en-US')} (${percentage}%)`;
             }
           }
         }

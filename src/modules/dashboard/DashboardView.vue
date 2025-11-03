@@ -5,8 +5,8 @@
     <div class="dashboard-header">
       <nav class="navbar">
         <div class="navbar-brand">
-          <h1 class="dashboard-title">Dashboard de Interacción</h1>
-          <p class="dashboard-subtitle">Análisis de métricas y engagement de campañas</p>
+          <h1 class="dashboard-title">Engagement Dashboard</h1>
+          <p class="dashboard-subtitle">Campaign metrics and engagement analysis</p>
         </div>
         <div class="navbar-actions">
           <button 
@@ -19,7 +19,7 @@
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>Cargar Excel</span>
+            <span>Upload Excel</span>
           </button>
         </div>
       </nav>
@@ -28,7 +28,7 @@
     <!-- Modal de carga de Excel -->
     <Modal 
       v-model:show="showUploadModal" 
-      title="Cargar Datos de Campañas"
+      title="Upload Campaign Data"
       @close="handleModalClose"
     >
       <UploadExcel 
@@ -108,7 +108,7 @@
       </div>
       <div class="col-kpi">
         <KpiCard
-          title="Número de Videos"
+          title="Number of Videos"
           :value="dashboardStore.kpis.totalVideos"
           color="cyan"
         >

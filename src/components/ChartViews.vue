@@ -1,15 +1,15 @@
 <template>
   <div class="chart-container glass-card">
     <div class="chart-header">
-      <h3 class="chart-title">Views por Fecha</h3>
+      <h3 class="chart-title">Views by Date</h3>
       <div class="chart-controls">
-        <!-- Filtro por Mes -->
+        <!-- Month filter -->
         <select 
           v-model="selectedMonth" 
           @change="filterByMonth"
           class="month-filter"
         >
-          <option value="all">Todos los meses</option>
+          <option value="all">All months</option>
           <option 
             v-for="month in availableMonths" 
             :key="month.value"
@@ -88,7 +88,7 @@ const availableMonths = computed(() => {
       if (!isNaN(date.getTime())) {
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const yearMonth = `${date.getFullYear()}-${month}`;
-        const monthLabel = date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+        const monthLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
         monthsSet.add(JSON.stringify({ value: yearMonth, label: monthLabel }));
       }
     } catch {
@@ -151,7 +151,7 @@ const chartData = computed(() => {
   };
 
   const labels = sorted.map(c => formatDate(c.entregables_fecha));
-  const campaignNames = sorted.map(c => c.NombreCampana || 'Sin nombre');
+  const campaignNames = sorted.map(c => c.NombreCampana || 'Untitled');
   const views = sorted.map(c => parseInt(c.Views) || 0);
   const likes = sorted.map(c => parseInt(c.Likes) || 0);
   const comments = sorted.map(c => parseInt(c.Comments) || 0);
@@ -194,6 +194,13 @@ const createChart = () => {
     chartInstance = null;
   }
 
+  // Colores desde variables CSS
+  const styles = getComputedStyle(document.documentElement);
+  const accent = styles.getPropertyValue('--accent-primary').trim() || '#ffd60a';
+  const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '255, 214, 10';
+  const white = styles.getPropertyValue('--color-white').trim() || '#ffffff';
+  const whiteRgb = styles.getPropertyValue('--color-white-rgb').trim() || '255, 255, 255';
+
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -202,43 +209,43 @@ const createChart = () => {
         {
           label: 'Views',
           data: data.views,
-          borderColor: '#00eaff',
-          backgroundColor: 'rgba(0, 234, 255, 0.1)',
+          borderColor: accent,
+          backgroundColor: `rgba(${accentRgb}, 0.1)`,
           borderWidth: 2,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 8,
-          pointBackgroundColor: '#00eaff',
-          pointBorderColor: '#0e0f12',
+          pointBackgroundColor: accent,
+          pointBorderColor: '#000000',
           pointBorderWidth: 2
         },
         {
           label: 'Likes',
           data: data.likes,
-          borderColor: '#ff7bf7',
-          backgroundColor: 'rgba(255, 123, 247, 0.1)',
+          borderColor: white,
+          backgroundColor: `rgba(${whiteRgb}, 0.1)`,
           borderWidth: 2,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 8,
-          pointBackgroundColor: '#ff7bf7',
-          pointBorderColor: '#0e0f12',
+          pointBackgroundColor: white,
+          pointBorderColor: '#000000',
           pointBorderWidth: 2
         },
         {
           label: 'Comments',
           data: data.comments,
-          borderColor: '#4dff91',
-          backgroundColor: 'rgba(77, 255, 145, 0.1)',
+          borderColor: white,
+          backgroundColor: `rgba(${whiteRgb}, 0.1)`,
           borderWidth: 2,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 8,
-          pointBackgroundColor: '#4dff91',
-          pointBorderColor: '#0e0f12',
+          pointBackgroundColor: white,
+          pointBorderColor: '#000000',
           pointBorderWidth: 2
         }
       ]
@@ -270,13 +277,13 @@ const createChart = () => {
               return `${campaignName} - ${date}`;
             },
             label: function(context) {
-              return `${context.dataset.label}: ${context.parsed.y.toLocaleString('es-ES')}`;
+              return `${context.dataset.label}: ${context.parsed.y.toLocaleString('en-US')}`;
             },
             afterBody: function(context) {
               const index = context[0].dataIndex;
               const url = data.urls[index];
               if (url) {
-                return [`URL: ${url}`, '(Clic para abrir)'];
+                return [`URL: ${url}`, '(Click to open)'];
               }
               return '';
             },
@@ -301,7 +308,7 @@ const createChart = () => {
         x: {
           title: {
             display: true,
-            text: 'Fecha (dd-mm-yyyy)',
+            text: 'Date (dd-mm-yyyy)',
             color: '#a8b0c1',
             font: {
               size: 12,
@@ -324,7 +331,7 @@ const createChart = () => {
         y: {
           title: {
             display: true,
-            text: 'Campaña / Métricas',
+            text: 'Campaign / Metrics',
             color: '#a8b0c1',
             font: {
               size: 12,
@@ -346,7 +353,7 @@ const createChart = () => {
                 const name = data.campaignNames[index];
                 return name.length > 20 ? name.substring(0, 20) + '...' : name;
               }
-              return value.toLocaleString('es-ES');
+              return value.toLocaleString('en-US');
             }
           },
           beginAtZero: true
@@ -412,7 +419,7 @@ onBeforeUnmount(() => {
 }
 
 .month-filter {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 0.25rem 1rem;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);

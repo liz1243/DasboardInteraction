@@ -11,7 +11,7 @@ export class DashboardService {
     try {
       // Validar tipo de archivo
       if (!file) {
-        throw new Error('No se ha seleccionado ningún archivo');
+        throw new Error('No file selected');
       }
 
       const validExtensions = [
@@ -20,8 +20,8 @@ export class DashboardService {
         'text/csv' // .csv
       ];
 
-      if (!validExtensions.includes(file.type)) {
-        throw new Error('El archivo debe ser un Excel (.xlsx, .xls) o CSV');
+      if (!validExtensions.includes(file.type) && !/\.(xlsx|xls|csv)$/i.test(file.name || '')) {
+        throw new Error('The file must be an Excel (.xlsx, .xls) or CSV');
       }
 
       // Parsear archivo

@@ -1,7 +1,7 @@
 <template>
   <div class="chart-container glass-card">
     <div class="chart-header">
-      <h3 class="chart-title">Métricas por Cliente</h3>
+      <h3 class="chart-title">Client Metrics</h3>
       <div class="chart-legend">
         <div class="legend-item">
           <span class="legend-dot legend-views"></span>
@@ -71,7 +71,7 @@ let chartInstance = null;
 const createChart = () => {
   if (!chartCanvas.value) return;
 
-  // Verificar si hay datos
+  // Verify data availability
   if (!props.labels || props.labels.length === 0) {
     return;
   }
@@ -90,18 +90,25 @@ const createChart = () => {
     chartInstance = null;
   }
 
+  // Colores desde variables CSS
+  const styles = getComputedStyle(document.documentElement);
+  const accent = styles.getPropertyValue('--accent-primary').trim() || '#ffd60a';
+  const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '255, 214, 10';
+  const white = styles.getPropertyValue('--color-white').trim() || '#ffffff';
+  const whiteRgb = styles.getPropertyValue('--color-white-rgb').trim() || '255, 255, 255';
+
   // Crear gradientes para las barras
   const viewsGradient = ctx.createLinearGradient(0, 0, 0, 400);
-  viewsGradient.addColorStop(0, 'rgba(0, 234, 255, 0.8)');
-  viewsGradient.addColorStop(1, 'rgba(0, 234, 255, 0.1)');
+  viewsGradient.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
+  viewsGradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
 
   const likesGradient = ctx.createLinearGradient(0, 0, 0, 400);
-  likesGradient.addColorStop(0, 'rgba(255, 123, 247, 0.8)');
-  likesGradient.addColorStop(1, 'rgba(255, 123, 247, 0.1)');
+  likesGradient.addColorStop(0, `rgba(${whiteRgb}, 0.8)`);
+  likesGradient.addColorStop(1, `rgba(${whiteRgb}, 0.1)`);
 
   const commentsGradient = ctx.createLinearGradient(0, 0, 0, 400);
-  commentsGradient.addColorStop(0, 'rgba(77, 255, 145, 0.8)');
-  commentsGradient.addColorStop(1, 'rgba(77, 255, 145, 0.1)');
+  commentsGradient.addColorStop(0, `rgba(${whiteRgb}, 0.5)`);
+  commentsGradient.addColorStop(1, `rgba(${whiteRgb}, 0.1)`);
 
   chartInstance = new Chart(ctx, {
     type: 'bar',
@@ -112,7 +119,7 @@ const createChart = () => {
           label: 'Views',
           data: props.views,
           backgroundColor: viewsGradient,
-          borderColor: '#00eaff',
+          borderColor: accent,
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -121,7 +128,7 @@ const createChart = () => {
           label: 'Likes',
           data: props.likes,
           backgroundColor: likesGradient,
-          borderColor: '#ff7bf7',
+          borderColor: white,
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -130,7 +137,7 @@ const createChart = () => {
           label: 'Comments',
           data: props.comments,
           backgroundColor: commentsGradient,
-          borderColor: '#4dff91',
+          borderColor: white,
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -154,7 +161,7 @@ const createChart = () => {
           displayColors: true,
           callbacks: {
             label: function(context) {
-              return `${context.dataset.label}: ${context.parsed.y.toLocaleString('es-ES')}`;
+              return `${context.dataset.label}: ${context.parsed.y.toLocaleString('en-US')}`;
             }
           }
         }
@@ -187,7 +194,7 @@ const createChart = () => {
               size: 11
             },
             callback: function(value) {
-              return value.toLocaleString('es-ES');
+              return value.toLocaleString('en-US');
             }
           },
           beginAtZero: true

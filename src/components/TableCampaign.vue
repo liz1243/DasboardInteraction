@@ -1,13 +1,13 @@
 <template>
   <div class="table-container glass-card">
     <div class="table-header">
-      <h3 class="table-title">Tabla Detallada de Campañas</h3>
+      <h3 class="table-title">Detailed Campaigns Table</h3>
       <div class="table-actions">
         <div class="table-stats" v-if="paginatedCampaigns.length > 0">
-          Mostrando {{ startIndex + 1 }}-{{ endIndex }} de {{ totalItems }} campañas
+          Showing {{ startIndex + 1 }}–{{ endIndex }} of {{ totalItems }} campaigns
         </div>
         <div class="export-buttons">
-          <button @click="exportExcel" class="btn-export" type="button" title="Exportar a Excel">
+          <button @click="exportExcel" class="btn-export" type="button" title="Export to Excel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -15,7 +15,7 @@
             </svg>
             Excel
           </button>
-          <button @click="exportCSV" class="btn-export" type="button" title="Exportar a CSV">
+          <button @click="exportCSV" class="btn-export" type="button" title="Export to CSV">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <!-- Búsqueda y Controles -->
+    <!-- Search and Controls -->
     <div class="table-controls">
       <div class="search-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -38,21 +38,21 @@
           type="text"
           v-model="localSearchQuery"
           @input="handleSearch"
-          placeholder="Buscar por campaña, cliente, talento o URL..."
+          placeholder="Search by campaign, client, talent or URL..."
           class="search-input"
         />
       </div>
 
       <div class="sort-controls">
-        <label class="sort-label">Ordenar por:</label>
+        <label class="sort-label">Sort by:</label>
         <select v-model="sortBy" @change="handleSort" class="select-modern">
           <option value="views">Views</option>
           <option value="likes">Likes</option>
           <option value="comments">Comments</option>
           <option value="engagement">Engagement</option>
-          <option value="fecha">Fecha</option>
+          <option value="fecha">Date</option>
         </select>
-        <button @click="toggleSortOrder" class="btn-sort" type="button" :title="sortOrder === 'desc' ? 'Descendente' : 'Ascendente'">
+        <button @click="toggleSortOrder" class="btn-sort" type="button" :title="sortOrder === 'desc' ? 'Descending' : 'Ascending'">
           <svg v-if="sortOrder === 'desc'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
             <polyline points="17 6 23 6 23 12"></polyline>
@@ -73,18 +73,18 @@
         <line x1="16" y1="17" x2="8" y2="17"></line>
         <polyline points="10 9 9 9 8 9"></polyline>
       </svg>
-      <p>No se encontraron resultados.</p>
+      <p>No results found.</p>
     </div>
 
     <div v-else class="table-wrapper">
       <table class="table-modern">
         <thead>
           <tr>
-            <th>Campaña</th>
-            <th>Cliente</th>
-            <th>Talento</th>
+            <th>Campaign</th>
+            <th>Client</th>
+            <th>Talent</th>
             <th>URL</th>
-            <th>Fecha</th>
+            <th>Date</th>
             <th class="text-end sortable" @click="setSort('views')">
               Views
               <span v-if="sortBy === 'views'" class="sort-indicator">
@@ -153,30 +153,30 @@
       </table>
     </div>
 
-    <!-- Paginación -->
+    <!-- Pagination -->
     <div class="pagination" v-if="totalPages > 1">
       <button 
         @click="goToPage(currentPage - 1)" 
         :disabled="currentPage === 1"
         class="btn-pagination"
       >
-        Anterior
+        Previous
       </button>
       <span class="page-info">
-        Página {{ currentPage }} de {{ totalPages }}
+        Page {{ currentPage }} of {{ totalPages }}
       </span>
       <button 
         @click="goToPage(currentPage + 1)" 
         :disabled="currentPage === totalPages"
         class="btn-pagination"
       >
-        Siguiente
+        Next
       </button>
-      <select v-model="itemsPerPage" @change="handlePageSizeChange" class="select-modern select-page-size">
-        <option value="10">10 por página</option>
-        <option value="25">25 por página</option>
-        <option value="50">50 por página</option>
-        <option value="100">100 por página</option>
+      <select v-model.number="itemsPerPage" @change="handlePageSizeChange" class="select-modern select-page-size">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50 </option>
+        <option value="100">100 </option>
       </select>
     </div>
   </div>
@@ -203,7 +203,7 @@ const localSearchQuery = ref(props.searchQuery || '');
 const sortBy = ref('engagement');
 const sortOrder = ref('desc');
 const currentPage = ref(1);
-const itemsPerPage = ref(25);
+const itemsPerPage = ref(10);
 
 // Computed - Campañas filtradas por búsqueda
 const filteredCampaigns = computed(() => {
@@ -282,7 +282,7 @@ const paginatedCampaigns = computed(() => {
 
 const formatNumber = (value) => {
   const num = parseInt(value) || 0;
-  return num.toLocaleString('es-ES');
+  return num.toLocaleString('en-US');
 };
 
 const formatDate = (date) => {
@@ -290,7 +290,7 @@ const formatDate = (date) => {
   try {
     const dateObj = new Date(date);
     if (isNaN(dateObj.getTime())) return date;
-    return dateObj.toLocaleDateString('es-ES', {
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -355,11 +355,11 @@ const handlePageSizeChange = () => {
 };
 
 const exportExcel = () => {
-  exportToExcel(sortedCampaigns.value, 'campañas');
+  exportToExcel(sortedCampaigns.value, 'campaigns');
 };
 
 const exportCSV = () => {
-  exportToCSV(sortedCampaigns.value, 'campañas');
+  exportToCSV(sortedCampaigns.value, 'campaigns');
 };
 
 watch(() => props.searchQuery, (newVal) => {
@@ -402,7 +402,7 @@ watch(() => props.campaigns, () => {
 .table-stats {
   font-size: 0.875rem;
   color: var(--text-secondary);
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding:  0.25rem 1rem;
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
 }
@@ -416,7 +416,7 @@ watch(() => props.campaigns, () => {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 0.25rem 1rem;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -541,6 +541,13 @@ watch(() => props.campaigns, () => {
   border-radius: var(--radius-lg);
 }
 
+/* Ensure table content has 14px font size */
+.table-modern,
+.table-modern th,
+.table-modern td {
+  font-size: 14px;
+}
+
 .text-end {
   text-align: right;
 }
@@ -594,6 +601,7 @@ watch(() => props.campaigns, () => {
 
 .metric-value {
   font-weight: 600;
+  font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
 
