@@ -82,11 +82,25 @@ const createChart = () => {
   const styles = getComputedStyle(document.documentElement);
   const accent = styles.getPropertyValue('--accent-primary').trim() || '#fdc600';
   const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '253, 198, 0';
+  const secondary = styles.getPropertyValue('--chart-secondary').trim() || '#bfbfbf';
+  const secondaryRgb = styles.getPropertyValue('--chart-secondary-rgb').trim() || '191, 191, 191';
+  const silver = styles.getPropertyValue('--metallic-silver').trim() || '#c0c0c0';
+  const silverRgb = styles.getPropertyValue('--metallic-silver-rgb').trim() || '192, 192, 192';
+  const textColor = styles.getPropertyValue('--chart-text').trim() || '#ffffff';
 
   // Gradient for bars (yellow)
-  const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
-  gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
+  const gradientPrimary = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientPrimary.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
+  gradientPrimary.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
+
+  // Gradient for bars (secondary gray)
+  const gradientSecondary = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientSecondary.addColorStop(0, `rgba(${secondaryRgb}, 0.8)`);
+  gradientSecondary.addColorStop(1, `rgba(${secondaryRgb}, 0.1)`);
+
+  // Alternate colors per bar
+  const bgColors = (props.engagement || []).map((_, index) => (index % 2 === 0 ? gradientPrimary : gradientSecondary));
+  const borderColors = (props.engagement || []).map((_, index) => (index % 2 === 0 ? accent : secondary));
 
   chartInstance = new Chart(ctx, {
     type: 'bar',
@@ -96,8 +110,8 @@ const createChart = () => {
         {
           label: 'Engagement Rate (%)',
           data: props.engagement,
-          backgroundColor: gradient,
-          borderColor: accent,
+          backgroundColor: bgColors,
+          borderColor: borderColors,
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -113,9 +127,9 @@ const createChart = () => {
         },
         tooltip: {
           backgroundColor: 'rgba(22, 24, 29, 0.95)',
-          titleColor: '#dfe3ec',
-          bodyColor: '#dfe3ec',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          titleColor: textColor,
+          bodyColor: textColor,
+          borderColor: `rgba(${silverRgb}, 0.2)`,
           borderWidth: 1,
           padding: 12,
           displayColors: true,
@@ -133,7 +147,7 @@ const createChart = () => {
             drawBorder: false
           },
           ticks: {
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 11
             }
@@ -141,11 +155,11 @@ const createChart = () => {
         },
         y: {
           grid: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: `rgba(${silverRgb}, 0.2)`,
             drawBorder: false
           },
           ticks: {
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 11
             },

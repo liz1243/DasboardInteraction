@@ -83,11 +83,20 @@ const createChart = () => {
   const styles = getComputedStyle(document.documentElement);
   const accent = styles.getPropertyValue('--accent-primary').trim() || '#ffd60a';
   const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '255, 214, 10';
+  const secondary = styles.getPropertyValue('--chart-secondary').trim() || '#bfbfbf';
+  const secondaryRgb = styles.getPropertyValue('--chart-secondary-rgb').trim() || '191, 191, 191';
+  const silver = styles.getPropertyValue('--metallic-silver').trim() || '#c0c0c0';
+  const silverRgb = styles.getPropertyValue('--metallic-silver-rgb').trim() || '192, 192, 192';
+  const textColor = styles.getPropertyValue('--chart-text').trim() || '#ffffff';
 
-  // Crear gradiente para las barras
-  const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
-  gradient.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
+  // Crear gradientes para las barras (amarillo y gris)
+  const gradientPrimary = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientPrimary.addColorStop(0, `rgba(${accentRgb}, 0.8)`);
+  gradientPrimary.addColorStop(1, `rgba(${accentRgb}, 0.1)`);
+
+  const gradientSecondary = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientSecondary.addColorStop(0, `rgba(${secondaryRgb}, 0.8)`);
+  gradientSecondary.addColorStop(1, `rgba(${secondaryRgb}, 0.1)`);
 
   chartInstance = new Chart(ctx, {
     type: 'bar',
@@ -98,8 +107,8 @@ const createChart = () => {
         {
           label: 'Engagement (%)',
           data: limitedVideos.map(v => v.engagement),
-          backgroundColor: gradient,
-          borderColor: accent,
+          backgroundColor: limitedVideos.map((_, index) => (index % 2 === 0 ? gradientPrimary : gradientSecondary)),
+          borderColor: limitedVideos.map((_, index) => (index % 2 === 0 ? accent : secondary)),
           borderWidth: 2,
           borderRadius: 6,
           borderSkipped: false
@@ -116,9 +125,9 @@ const createChart = () => {
         },
         tooltip: {
           backgroundColor: 'rgba(22, 24, 29, 0.95)',
-          titleColor: '#dfe3ec',
-          bodyColor: '#dfe3ec',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          titleColor: textColor,
+          bodyColor: textColor,
+          borderColor: `rgba(${silverRgb}, 0.2)`,
           borderWidth: 1,
           padding: 12,
           displayColors: true,
@@ -148,18 +157,18 @@ const createChart = () => {
           title: {
             display: true,
             text: 'Engagement (%)',
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 12,
               weight: 'bold'
             }
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: `rgba(${silverRgb}, 0.2)`,
             drawBorder: false
           },
           ticks: {
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 11
             },
@@ -173,7 +182,7 @@ const createChart = () => {
           title: {
             display: true,
             text: 'Campaign',
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 12,
               weight: 'bold'
@@ -184,7 +193,7 @@ const createChart = () => {
             drawBorder: false
           },
           ticks: {
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 11
             },

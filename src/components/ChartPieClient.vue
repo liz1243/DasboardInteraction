@@ -46,7 +46,9 @@ const getThemeColors = () => {
   const styles = getComputedStyle(document.documentElement);
   const accent = (styles.getPropertyValue('--accent-primary').trim() || '#fdc600');
   const accentRgb = (styles.getPropertyValue('--accent-primary-rgb').trim() || '253, 198, 0');
-  return { accent, accentRgb };
+  const secondary = (styles.getPropertyValue('--chart-secondary').trim() || '#bfbfbf');
+  const secondaryRgb = (styles.getPropertyValue('--chart-secondary-rgb').trim() || '191, 191, 191');
+  return { accent, accentRgb, secondary, secondaryRgb };
 };
 
 const createChart = () => {
@@ -72,15 +74,19 @@ const createChart = () => {
   }
 
   // Generate yellow shades for each segment with increasing opacity
-  const { accent, accentRgb } = getThemeColors();
+  const { accent, accentRgb, secondary, secondaryRgb } = getThemeColors();
   const totalSegments = props.labels.length || 1;
   const backgroundColors = props.labels.map((_, index) => {
     const t = totalSegments > 1 ? index / (totalSegments - 1) : 1; // 0..1
     const alpha = Math.min(0.9, 0.35 + t * 0.55); // 0.35 → 0.9
-    return `rgba(${accentRgb}, ${alpha})`;
+    // Alternar entre amarillo y gris para no tener todo amarillo
+    const useSecondary = index % 2 === 1;
+    return useSecondary
+      ? `rgba(${secondaryRgb}, ${alpha})`
+      : `rgba(${accentRgb}, ${alpha})`;
   });
 
-  const borderColorsArray = props.labels.map(() => accent);
+  const borderColorsArray = props.labels.map((_, index) => (index % 2 === 1 ? secondary : accent));
 
   chartInstance = new Chart(ctx, {
     type: 'pie',
@@ -103,7 +109,7 @@ const createChart = () => {
         legend: {
           position: 'bottom',
           labels: {
-            color: '#dfe3ec',
+            color: '#ffffff',
             padding: 15,
             font: {
               size: 12,
@@ -115,9 +121,9 @@ const createChart = () => {
         },
         tooltip: {
           backgroundColor: 'rgba(22, 24, 29, 0.95)',
-          titleColor: '#dfe3ec',
-          bodyColor: '#dfe3ec',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderColor: 'rgba(192, 192, 192, 0.2)',
           borderWidth: 1,
           padding: 12,
           displayColors: true,

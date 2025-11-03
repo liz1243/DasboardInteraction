@@ -8,7 +8,7 @@
   --color-white-rgb: 255, 255, 255;
 
   /* Tokens de tema base */
-  --bg-primary: #070807;
+  --bg-primary: #000000;
   --bg-secondary: #16181d;
   --bg-tertiary: #1e2128;
   --bg-card: rgb(30, 33, 40);
@@ -62,5 +62,26 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+
+  /* Palette solicitada para charts */
+  --neutral-dark: #333333;
+  --metallic-silver: #c0c0c0;
+  --metallic-silver-rgb: 192, 192, 192;
+
+  /* Colores base para gráficos */
+  --chart-bg: #000000;
+  --chart-text: #ffffff;
+  --chart-primary: #fdc600; /* igual a --accent-primary */
+  --chart-views: var(--chart-primary);
+  /* Secundario solicitado */
+  --chart-secondary: #bfbfbf;
+  --chart-secondary-rgb: 191, 191, 191;
+  /* Asignamos Likes al secundario para diferenciar */
+  --chart-likes: var(--chart-secondary);
+  --chart-likes-rgb: var(--chart-secondary-rgb);
+  --chart-comments: #ffd54d;
+  --chart-comments-rgb: 255, 213, 77;
+  --chart-axis: var(--metallic-silver);
+  --chart-grid: rgba(192, 192, 192, 0.2);
 }
 

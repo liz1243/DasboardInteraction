@@ -200,6 +200,13 @@ const createChart = () => {
   const accentRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '255, 214, 10';
   const white = styles.getPropertyValue('--color-white').trim() || '#ffffff';
   const whiteRgb = styles.getPropertyValue('--color-white-rgb').trim() || '255, 255, 255';
+  const silver = styles.getPropertyValue('--metallic-silver').trim() || '#c0c0c0';
+  const silverRgb = styles.getPropertyValue('--metallic-silver-rgb').trim() || '192, 192, 192';
+  const likes = styles.getPropertyValue('--chart-likes').trim() || '#e6b800';
+  const likesRgb = styles.getPropertyValue('--chart-likes-rgb').trim() || '230, 184, 0';
+  const comments = styles.getPropertyValue('--chart-comments').trim() || '#ffd54d';
+  const commentsRgb = styles.getPropertyValue('--chart-comments-rgb').trim() || '255, 213, 77';
+  const textColor = styles.getPropertyValue('--chart-text').trim() || '#ffffff';
 
   chartInstance = new Chart(ctx, {
     type: 'line',
@@ -223,28 +230,28 @@ const createChart = () => {
         {
           label: 'Likes',
           data: data.likes,
-          borderColor: white,
-          backgroundColor: `rgba(${whiteRgb}, 0.1)`,
+          borderColor: likes,
+          backgroundColor: `rgba(${likesRgb}, 0.1)`,
           borderWidth: 2,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 8,
-          pointBackgroundColor: white,
+          pointBackgroundColor: likes,
           pointBorderColor: '#000000',
           pointBorderWidth: 2
         },
         {
           label: 'Comments',
           data: data.comments,
-          borderColor: white,
-          backgroundColor: `rgba(${whiteRgb}, 0.1)`,
+          borderColor: comments,
+          backgroundColor: `rgba(${commentsRgb}, 0.1)`,
           borderWidth: 2,
           fill: true,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 8,
-          pointBackgroundColor: white,
+          pointBackgroundColor: comments,
           pointBorderColor: '#000000',
           pointBorderWidth: 2
         }
@@ -263,9 +270,9 @@ const createChart = () => {
         },
         tooltip: {
           backgroundColor: 'rgba(22, 24, 29, 0.95)',
-          titleColor: '#dfe3ec',
-          bodyColor: '#dfe3ec',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          titleColor: textColor,
+          bodyColor: textColor,
+          borderColor: `rgba(${silverRgb}, 0.2)`,
           borderWidth: 1,
           padding: 12,
           displayColors: true,
@@ -309,18 +316,18 @@ const createChart = () => {
           title: {
             display: true,
             text: 'Date (dd-mm-yyyy)',
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 12,
               weight: 'bold'
             }
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: `rgba(${silverRgb}, 0.2)`,
             drawBorder: false
           },
           ticks: {
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 10
             },
@@ -332,18 +339,18 @@ const createChart = () => {
           title: {
             display: true,
             text: 'Campaign / Metrics',
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 12,
               weight: 'bold'
             }
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.05)',
+            color: `rgba(${silverRgb}, 0.2)`,
             drawBorder: false
           },
           ticks: {
-            color: '#a8b0c1',
+            color: silver,
             font: {
               size: 11
             },
@@ -459,18 +466,15 @@ onBeforeUnmount(() => {
 }
 
 .legend-views {
-  background: var(--accent-cyan);
-  box-shadow: 0 0 8px rgba(0, 234, 255, 0.5);
+  background: var(--chart-views);
 }
 
 .legend-likes {
-  background: var(--accent-pink);
-  box-shadow: 0 0 8px rgba(255, 123, 247, 0.5);
+  background: var(--chart-likes);
 }
 
 .legend-comments {
-  background: var(--accent-green);
-  box-shadow: 0 0 8px rgba(77, 255, 145, 0.5);
+  background: var(--chart-comments);
 }
 
 .chart-wrapper {
