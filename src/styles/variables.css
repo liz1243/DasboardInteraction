@@ -1,0 +1,54 @@
+:root {
+  /* Colores base dark theme */
+  --bg-primary: #0e0f12;
+  --bg-secondary: #16181d;
+  --bg-tertiary: #1e2128;
+  --bg-card: rgba(30, 33, 40, 0.6);
+  --bg-glass: rgba(22, 24, 29, 0.7);
+  
+  /* Textos */
+  --text-primary: #dfe3ec;
+  --text-secondary: #a8b0c1;
+  --text-muted: #6b7280;
+  
+  /* Acentos neón */
+  --accent-cyan: #00eaff;
+  --accent-pink: #ff7bf7;
+  --accent-green: #4dff91;
+  --accent-blue: #5b8def;
+  
+  /* Bordes y sombras */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 234, 255, 0.3);
+  --shadow-glow-pink: 0 0 20px rgba(255, 123, 247, 0.3);
+  --shadow-glow-green: 0 0 20px rgba(77, 255, 145, 0.3);
+  
+  /* Tipografía */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  
+  /* Transiciones */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
