@@ -123,3 +123,11 @@ El proyecto sigue la arquitectura **Presentation-Abstraction-Control**:
 - Todos los estilos visuales son personalizados con CSS variables
 - El tema oscuro está completamente configurado desde `variables.css`
 - Las gráficas están optimizadas para modo oscuro con colores neón
+
+## 🚀 Despliegue en Vercel
+
+Este proyecto está configurado para desplegarse fácilmente en Vercel:
+
+1. Conecta tu repositorio de GitHub a Vercel
+2. Vercel detectará automáticamente la configuración de Vite
+3. El archivo `vercel.json` está configurado para el correcto funcionamiento de Vue Router
