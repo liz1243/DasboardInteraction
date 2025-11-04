@@ -342,17 +342,21 @@ export function getAvailableTalents(campaigns) {
  * Obtiene datos para gráfica de engagement por video
  */
 export function getEngagementByVideo(campaigns) {
-  const videos = campaigns.map(campaign => {
+  // Solo considerar campañas que tengan TituloEntregable
+  const total = (campaigns || []).length;
+  const withTitulo = (campaigns || []).map(c => {
+    const titulo = c.TituloEntregable ?? c.Tituloentregable ?? c['Titulo Entregable'] ?? c['Título Entregable'] ?? c['titulo entregable'] ?? c['tituloEntregable'];
+    return { campaign: c, titulo };
+  }).filter(x => x.titulo && String(x.titulo).trim() !== '');
+  const videos = withTitulo.map(({ campaign, titulo }) => {
     const views = parseInt(campaign.Views) || 0;
     const likes = parseInt(campaign.Likes) || 0;
     const comments = parseInt(campaign.Comments) || 0;
     const engagement = views > 0 ? ((likes + comments) / views) * 100 : 0;
 
     return {
-      label: campaign.entregables_URL ? 
-        campaign.entregables_URL.substring(campaign.entregables_URL.length - 11) : 
-        campaign.NombreCampana || 'Untitled',
-      fullLabel: campaign.entregables_URL || campaign.NombreCampana || 'Untitled',
+      label: titulo,
+      fullLabel: campaign.entregables_URL || titulo || 'Untitled',
       views,
       likes,
       comments,
@@ -360,7 +364,8 @@ export function getEngagementByVideo(campaigns) {
       campaign: campaign.NombreCampana,
       cliente: campaign.NombreCliente,
       talento: campaign.NombreTalento,
-      fecha: campaign.entregables_fecha
+      fecha: campaign.entregables_fecha,
+      tituloEntregable: titulo
     };
   });
 

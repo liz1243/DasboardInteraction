@@ -136,6 +136,78 @@ function normalizeData(data) {
       delete normalized.NombreCampa;
     }
     
+    // Titulo Entregable: aceptar distintas variantes y normalizar a TituloEntregable
+    const tituloEntregableVariants = [
+      'TituloEntregable',
+      'Titulo Entregable',
+      'Título Entregable',
+      'TítuloEntregable',
+      'titulo entregable',
+      'titulo_entregable',
+      'tituloEntregable',
+      'Tituloentregable'
+    ];
+    for (const key of tituloEntregableVariants) {
+      if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+        normalized.TituloEntregable = row[key];
+        if (key !== 'TituloEntregable') {
+          delete normalized[key];
+        }
+        break;
+      }
+    }
+    // Búsqueda flexible por nombre de columna (ignorar acentos/espacios/mayúsculas)
+    if (normalized.TituloEntregable === undefined) {
+      for (const key in row) {
+        const simplified = String(key)
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/\s|_/g, '');
+        if (simplified === 'tituloentregable') {
+          normalized.TituloEntregable = row[key];
+          if (key !== 'TituloEntregable') {
+            delete normalized[key];
+          }
+          break;
+        }
+      }
+    }
+    
+    // Plataforma Talento: aceptar distintas variantes y normalizar a PlataformaTalento
+    const plataformaTalentoVariants = [
+      'PlataformaTalento',
+      'Plataforma Talento',
+      'plataforma talento',
+      'plataforma_talento',
+      'plataformaTalento'
+    ];
+    for (const key of plataformaTalentoVariants) {
+      if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+        normalized.PlataformaTalento = row[key];
+        if (key !== 'PlataformaTalento') {
+          delete normalized[key];
+        }
+        break;
+      }
+    }
+    if (normalized.PlataformaTalento === undefined) {
+      for (const key in row) {
+        const simplified = String(key)
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/\s|_/g, '');
+        if (simplified === 'plataformatalento') {
+          normalized.PlataformaTalento = row[key];
+          if (key !== 'PlataformaTalento') {
+            delete normalized[key];
+          }
+          break;
+        }
+      }
+    }
+    
     // Manejar entregables_fecha (puede venir como entregables_fe)
     let fechaValue = row.entregables_fecha || row.entregables_fe;
     

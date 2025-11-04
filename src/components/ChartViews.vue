@@ -290,7 +290,7 @@ const createChart = () => {
               const index = context[0].dataIndex;
               const url = data.urls[index];
               if (url) {
-                return [`URL: ${url}`, '(Click to open)'];
+                return [`URL: ${url}`];
               }
               return '';
             },
@@ -300,14 +300,22 @@ const createChart = () => {
             }
           }
         },
-        onClick: function(event, elements) {
-          if (elements.length > 0) {
-            const element = elements[0];
-            const index = element.index;
-            const url = data.urls[index];
-            if (url) {
-              window.open(url, '_blank');
-            }
+      },
+      hover: {
+        onHover: function(event, elements) {
+          const canvas = event?.native ? event.native.target : chartCanvas.value;
+          if (canvas && canvas.style) {
+            canvas.style.cursor = elements && elements.length > 0 ? 'pointer' : 'default';
+          }
+        }
+      },
+      onClick: function(event, elements, chart) {
+        if (elements && elements.length > 0) {
+          const el = elements[0];
+          const index = el.index;
+          const url = data.urls[index];
+          if (url) {
+            window.open(url, '_blank');
           }
         }
       },

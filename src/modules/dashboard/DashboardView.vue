@@ -162,9 +162,9 @@
         </div>
       </div>
     </div>
-
     <!-- Engagement por Video -->
     <div class="row mb-4" v-if="dashboardStore.kpis.totalViews > 0 && dashboardStore.engagementByVideo.length > 0">
+      
       <div class="col-12">
         <div style="height: 500px;">
           <ChartEngagementByVideo

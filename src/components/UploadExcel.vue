@@ -1,7 +1,6 @@
 <template>
   <div class="upload-container glass-card">
     <div class="upload-header">
-      <h3 class="upload-title">Upload Campaign Data</h3>
       <p class="upload-description">Upload an Excel file with your campaigns data</p>
     </div>
 

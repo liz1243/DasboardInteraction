@@ -58,7 +58,9 @@ const getLimitedVideos = () => {
 };
 
 const createChart = () => {
-  if (!chartCanvas.value) return;
+  if (!chartCanvas.value) {
+    return;
+  }
 
   const limitedVideos = getLimitedVideos();
   
@@ -101,8 +103,8 @@ const createChart = () => {
   chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      // Usar NombreCampana en el eje Y
-      labels: limitedVideos.map(v => v.campaign || v.label || 'Untitled'),
+      // Usar Titulo Entregable en el eje Y
+      labels: limitedVideos.map(v => v.tituloEntregable || v.label || 'Untitled'),
       datasets: [
         {
           label: 'Engagement (%)',
@@ -134,10 +136,10 @@ const createChart = () => {
           callbacks: {
             title: function(context) {
               const video = limitedVideos[context[0].dataIndex];
-              const campaignName = video.campaign || video.label || 'Untitled';
-              return campaignName.length > 50 ? 
-                campaignName.substring(0, 50) + '...' : 
-                campaignName;
+              const entregable = video.tituloEntregable || video.label || 'Untitled';
+              return entregable.length > 50 ? 
+                entregable.substring(0, 50) + '...' : 
+                entregable;
             },
             label: function(context) {
               const video = limitedVideos[context.dataIndex];
@@ -181,7 +183,7 @@ const createChart = () => {
         y: {
           title: {
             display: true,
-            text: 'Campaign',
+            text: 'Entregable',
             color: silver,
             font: {
               size: 12,
@@ -200,11 +202,11 @@ const createChart = () => {
             // Truncar nombres largos en el eje Y
             callback: function(value, index) {
               const video = limitedVideos[index];
-              const campaignName = video.campaign || video.label || 'Untitled';
-              if (campaignName.length > 30) {
-                return campaignName.substring(0, 30) + '...';
+              const entregable = video.tituloEntregable || video.label || 'Untitled';
+              if (entregable.length > 30) {
+                return entregable.substring(0, 30) + '...';
               }
-              return campaignName;
+              return entregable;
             }
           }
         }

@@ -246,6 +246,21 @@ watch(() => props.filters, (newFilters) => {
   localFilters.value = { ...newFilters };
 }, { deep: true });
 
+// Si cambia el cliente (y por ende la lista de talentos), resetear talento si no es válido
+watch(
+  () => [props.availableTalents, localFilters.value.client],
+  () => {
+    if (
+      localFilters.value.talent !== 'all' &&
+      !props.availableTalents.includes(localFilters.value.talent)
+    ) {
+      localFilters.value.talent = 'all';
+      updateFilters();
+    }
+  },
+  { deep: false }
+);
+
 const toggleDropdown = (dropdown) => {
   activeDropdown.value = activeDropdown.value === dropdown ? null : dropdown;
 };

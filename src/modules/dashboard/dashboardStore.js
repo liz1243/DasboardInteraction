@@ -92,7 +92,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
   });
 
   const availableTalents = computed(() => {
-    return getAvailableTalents(campaigns.value);
+    // Filtrar talentos por cliente seleccionado si aplica
+    const selectedClient = filters.value.client;
+    const source = selectedClient && selectedClient !== 'all'
+      ? campaigns.value.filter(c => c.NombreCliente === selectedClient)
+      : campaigns.value;
+    return getAvailableTalents(source);
   });
 
   const availableClients = computed(() => {
