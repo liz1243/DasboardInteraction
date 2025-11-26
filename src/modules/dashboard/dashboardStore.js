@@ -1,15 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { 
-  calculateKPIs, 
-  groupByDate, 
-  calculateEngagementByDate,
-  getClientPieData,
-  getClientBarData,
-  getEngagementByVideo,
   filterCampaigns,
-  getAvailableMonths,
-  getAvailableCampaigns,
   getAvailableTalents
 } from '@/utils/kpiCalculations.js';
 
@@ -21,74 +13,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
   
   // Filtros
   const filters = ref({
-    month: 'all',
-    campaign: 'all',
     client: 'all',
     talent: 'all',
-    dateStart: '',
-    dateEnd: '',
-    viewsMin: '',
-    viewsMax: '',
-    likesMin: '',
-    likesMax: '',
-    commentsMin: '',
-    commentsMax: '',
-    engagementMin: '',
     searchQuery: ''
   });
 
   // Computed - Campañas filtradas
   const filteredCampaigns = computed(() => {
     return filterCampaigns(campaigns.value, filters.value);
-  });
-
-  // Computed - KPIs de campañas filtradas
-  const kpis = computed(() => {
-    return calculateKPIs(filteredCampaigns.value);
-  });
-
-  const chartDataViews = computed(() => {
-    const grouped = groupByDate(filteredCampaigns.value);
-    const dates = Object.keys(grouped).sort();
-    
-    return {
-      labels: dates,
-      views: dates.map(date => grouped[date].views),
-      likes: dates.map(date => grouped[date].likes),
-      comments: dates.map(date => grouped[date].comments)
-    };
-  });
-
-  const chartDataEngagement = computed(() => {
-    const engagementData = calculateEngagementByDate(filteredCampaigns.value);
-    
-    return {
-      labels: engagementData.map(item => item.date),
-      engagement: engagementData.map(item => item.engagement)
-    };
-  });
-
-  // Datos por cliente
-  const chartDataClientPie = computed(() => {
-    return getClientPieData(filteredCampaigns.value);
-  });
-
-  const chartDataClientBar = computed(() => {
-    return getClientBarData(filteredCampaigns.value);
-  });
-
-  // Engagement por video
-  const engagementByVideo = computed(() => {
-    return getEngagementByVideo(filteredCampaigns.value);
-  });
-
-  // Opciones de filtros
-  const availableMonths = computed(() => {
-    return getAvailableMonths(campaigns.value);
-  });
-
-  const availableCampaigns = computed(() => {
-    return getAvailableCampaigns(campaigns.value);
   });
 
   const availableTalents = computed(() => {
@@ -124,19 +56,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   function resetFilters() {
     filters.value = {
-      month: 'all',
-      campaign: 'all',
       client: 'all',
       talent: 'all',
-      dateStart: '',
-      dateEnd: '',
-      viewsMin: '',
-      viewsMax: '',
-      likesMin: '',
-      likesMax: '',
-      commentsMin: '',
-      commentsMax: '',
-      engagementMin: '',
       searchQuery: ''
     };
   }
@@ -164,14 +85,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error,
     filters,
     // Computed
-    kpis,
-    chartDataViews,
-    chartDataEngagement,
-    chartDataClientPie,
-    chartDataClientBar,
-    engagementByVideo,
-    availableMonths,
-    availableCampaigns,
     availableTalents,
     availableClients,
     // Acciones

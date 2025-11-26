@@ -1,239 +1,322 @@
 <template>
   <div class="dashboard-view">
-    <!-- Sidebar de Filtros Avanzados -->
-
+    <!-- Header -->
     <div class="dashboard-header">
-      <nav class="navbar">
-        <div class="navbar-brand">
-          <h1 class="dashboard-title">Engagement Dashboard</h1>
-          <p class="dashboard-subtitle">Campaign metrics and engagement analysis</p>
+      <div class="header-content">
+        <div class="header-title">
+          <h1 class="dashboard-title">Campaigns Dashboard</h1>
+          <p class="dashboard-subtitle">{{ currentMonth }}</p>
         </div>
-        <div class="navbar-actions">
-          <button 
-            @click="showUploadModal = true" 
-            class="btn-upload-navbar"
-            type="button"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            <span>Upload Excel</span>
-          </button>
-        </div>
-      </nav>
-    </div>
-
-    <!-- Modal de carga de Excel -->
-    <Modal 
-      v-model:show="showUploadModal" 
-      title="Upload Campaign Data"
-      @close="handleModalClose"
-    >
-      <UploadExcel 
-        ref="uploadComponent"
-        @upload="handleFileUpload" 
-      />
-    </Modal>
-
-    <!-- Panel de Filtros -->
-    <div class="row mb-4" v-if="dashboardStore.campaigns.length > 0">
-      <div class="col-12">
-        <FiltersSidebar
-          :filters="dashboardStore.filters"
-          :available-clients="dashboardStore.availableClients"
-          :available-talents="dashboardStore.availableTalents"
-          @update-filters="handleUpdateFilters"
-          @clear-filters="handleClearFilters"
-        />
       </div>
     </div>
 
     <!-- KPIs -->
-    <div class="row mb-4 kpis-container" v-if="dashboardStore.kpis.totalViews > 0">
-      <div class="col-kpi">
-        <KpiCard
-          title="Total Views"
-          :value="dashboardStore.kpis.totalViews"
-          color="cyan"
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </template>
-        </KpiCard>
-      </div>
-      <div class="col-kpi">
-        <KpiCard
-          title="Total Likes"
-          :value="dashboardStore.kpis.totalLikes"
-          color="pink"
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </template>
-        </KpiCard>
-      </div>
-      <div class="col-kpi">
-        <KpiCard
-          title="Total Comments"
-          :value="dashboardStore.kpis.totalComments"
-          color="green"
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-          </template>
-        </KpiCard>
-      </div>
-      <div class="col-kpi">
-        <KpiCard
-          title="Engagement Rate"
-          :value="dashboardStore.kpis.engagementRate"
-          format="percentage"
-          color="blue"
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-          </template>
-        </KpiCard>
-      </div>
-      <div class="col-kpi">
-        <KpiCard
-          title="Number of Videos"
-          :value="dashboardStore.kpis.totalVideos"
-          color="cyan"
-        >
-          <template #icon>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="23 7 16 12 23 17 23 7"></polygon>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-            </svg>
-          </template>
-        </KpiCard>
-      </div>
+    <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0">
+      <KpiCard
+        title="Total FTDs"
+        :value="ftdsData.totalFTDs"
+        color="cyan"
+        :subtitle="`of ${ftdsData.targetFTDs} target`"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </template>
+      </KpiCard>
+      <KpiCard
+        title="Target Achieved %"
+        :value="ftdsData.metaProgress"
+        format="percentage"
+        color="green"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </template>
+      </KpiCard>
+      <KpiCard
+        title="Average CPA"
+        :value="ftdsData.avgCPA"
+        format="currency"
+        color="pink"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </template>
+      </KpiCard>
+      <KpiCard
+        title="Top Talent"
+        :value="ftdsData.topTalent"
+        color="blue"
+        :subtitle="ftdsData.topTalentHandle"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </template>
+      </KpiCard>
+      <KpiCard
+        title="Top Platform"
+        :value="ftdsData.topPlatform"
+        color="cyan"
+        :subtitle="`${ftdsData.topPlatformFTDs} FTDs`"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </template>
+      </KpiCard>
     </div>
 
-    <!-- Gráficas por Cliente -->
-    <div class="row mb-4" v-if="dashboardStore.kpis.totalViews > 0 && dashboardStore.chartDataClientPie.labels.length > 0">
-      <div class="col-lg-6 mb-3">
-        <div style="height: 450px;">
-          <ChartPieClient
-            :labels="dashboardStore.chartDataClientPie.labels"
-            :data="dashboardStore.chartDataClientPie.data"
-          />
-        </div>
-      </div>
-      <div class="col-lg-6 mb-3">
-        <div style="height: 450px;">
-          <ChartBarClient
-            :labels="dashboardStore.chartDataClientBar.labels"
-            :views="dashboardStore.chartDataClientBar.views"
-            :likes="dashboardStore.chartDataClientBar.likes"
-            :comments="dashboardStore.chartDataClientBar.comments"
-          />
-        </div>
-      </div>
+    <!-- Filtros Fijos (siempre visibles) -->
+    <div class="filters-section-sticky" v-if="dashboardStore.campaigns.length > 0">
+      <FiltersSidebar
+        :filters="dashboardStore.filters"
+        :available-clients="dashboardStore.availableClients"
+        :available-talents="dashboardStore.availableTalents"
+        @update-filters="handleUpdateFilters"
+        @clear-filters="handleClearFilters"
+      />
     </div>
 
-    <!-- Gráficas por Fecha -->
-    <div class="row mb-4" v-if="dashboardStore.kpis.totalViews > 0">
-      <div class="col-lg-8 mb-3">
-        <div style="height: 400px;">
-          <ChartViews
-            :campaigns="dashboardStore.filteredCampaigns"
-          />
-        </div>
-      </div>
-      <div class="col-lg-4 mb-3">
-        <div style="height: 400px;">
-          <ChartEngagement
-            :labels="dashboardStore.chartDataEngagement.labels"
-            :engagement="dashboardStore.chartDataEngagement.engagement"
-          />
-        </div>
-      </div>
-    </div>
-    <!-- Engagement por Video -->
-    <div class="row mb-4" v-if="dashboardStore.kpis.totalViews > 0 && dashboardStore.engagementByVideo.length > 0">
-      
-      <div class="col-12">
-        <div style="height: 500px;">
-          <ChartEngagementByVideo
-            :videos="dashboardStore.engagementByVideo"
-          />
-        </div>
+    <!-- Gráfico de Barras - Timeline FTDs vs Entregables -->
+    <div class="chart-section" v-if="dashboardStore.campaigns.length > 0">
+      <div class="chart-wrapper">
+        <ChartFTDsTimeline :data="dashboardStore.filteredCampaigns" />
       </div>
     </div>
 
     <!-- Tabla de campañas -->
-    <div class="row">
-      <div class="col-12">
-        <TableCampaign 
-          :campaigns="dashboardStore.filteredCampaigns"
-          :search-query="dashboardStore.filters.searchQuery"
-          @update-search="handleSearchUpdate"
-        />
-      </div>
+    <div class="table-section">
+      <TableCampaign 
+        :campaigns="dashboardStore.filteredCampaigns"
+        :search-query="dashboardStore.filters.searchQuery"
+        @update-search="handleSearchUpdate"
+        @view-campaign="handleViewCampaign"
+      />
     </div>
+
+    <!-- Panel de Detalles de Campaña (debajo de la tabla) -->
+    <div v-if="selectedCampaign" class="campaign-details-section">
+      <CampaignDetails 
+        :campaign="selectedCampaign" 
+        @close="selectedCampaign = null"
+        @view-deliverable="handleViewDeliverable"
+      />
+    </div>
+
+    <!-- Panel de Detalles de Entregable (debajo del panel de campaña) -->
+    <div v-if="selectedDeliverable" class="deliverable-details-section">
+      <DeliverableDetails 
+        :deliverable="selectedDeliverable" 
+        :related-deliverables="getRelatedDeliverablesForSelected()"
+        @close="selectedDeliverable = null" 
+      />
+    </div>
+
+    <!-- Botón Scroll to Top -->
+    <button 
+      v-if="showScrollTop"
+      @click="scrollToTop"
+      class="scroll-to-top"
+      type="button"
+      title="Ir al principio"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useDashboardStore } from './dashboardStore.js';
-import { DashboardService } from './dashboardService.js';
-import { loadMockData } from '@/utils/mockData.js';
-import UploadExcel from '@/components/UploadExcel.vue';
-import Modal from '@/components/Modal.vue';
 import KpiCard from '@/components/KpiCard.vue';
-import ChartViews from '@/components/ChartViews.vue';
-import ChartEngagement from '@/components/ChartEngagement.vue';
-import ChartPieClient from '@/components/ChartPieClient.vue';
-import ChartBarClient from '@/components/ChartBarClient.vue';
-import ChartEngagementByVideo from '@/components/ChartEngagementByVideo.vue';
-import FiltersPanel from '@/components/FiltersPanel.vue';
 import FiltersSidebar from '@/components/FiltersSidebar.vue';
 import TableCampaign from '@/components/TableCampaign.vue';
+import ChartFTDsTimeline from '@/components/ChartFTDsTimeline.vue';
+import CampaignDetails from '@/components/CampaignDetails.vue';
+import DeliverableDetails from '@/components/DeliverableDetails.vue';
+// Opción 1: Usar API (fetch) - descomenta esta línea
+import { fetchCampaigns } from '@/services/apiService.js';
+// Opción 2: Usar JSON local (fallback) - descomenta esta línea si no tienes API
+// import campaignsData from '@/data/campaigns.json';
 
 const dashboardStore = useDashboardStore();
-const uploadComponent = ref(null);
-const showUploadModal = ref(false);
+const selectedCampaign = ref(null);
+const selectedDeliverable = ref(null);
+const showScrollTop = ref(false);
 
-// Cargar datos mock al iniciar si no hay datos
+// Detectar scroll para mostrar botón de ir arriba
+const handleScroll = () => {
+  showScrollTop.value = window.scrollY > 300;
+};
+
+// Ir al principio de la página
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+};
+
 onMounted(() => {
-  if (dashboardStore.campaigns.length === 0) {
-    loadMockData(dashboardStore);
-  }
+  window.addEventListener('scroll', handleScroll);
 });
 
-const handleFileUpload = async (file) => {
-  dashboardStore.setLoading(true);
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
+
+// Calcular mes actual
+const currentMonth = computed(() => {
+  const date = new Date();
+  return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+});
+
+// Calcular datos de FTDs
+const ftdsData = computed(() => {
+  const campaigns = dashboardStore.filteredCampaigns;
   
-  const result = await DashboardService.processExcelFile(file);
+  // Total FTDs obtenidos
+  const totalFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDObtenido) || 0), 0);
   
-  if (result.success) {
-    dashboardStore.setCampaigns(result.data);
-    if (uploadComponent.value) {
-      uploadComponent.value.clearFile();
+  // Meta total (suma de FTDs meta)
+  const targetFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDs) || 0), 0);
+  
+  // % Meta alcanzada
+  const metaProgress = targetFTDs > 0 ? (totalFTDs / targetFTDs) * 100 : 0;
+  
+  // CPA promedio (asumiendo un presupuesto estimado)
+  const avgCPA = totalFTDs > 0 ? 50 : 0; // Placeholder - ajustar según datos reales
+  
+  // Top talento por FTDs
+  const talentFTDs = {};
+  campaigns.forEach(c => {
+    const talent = c.NombreTalento || 'Unknown';
+    if (!talentFTDs[talent]) {
+      talentFTDs[talent] = { count: 0, handle: c.PlataformaTalento || '' };
     }
-  } else {
-    dashboardStore.setError(result.error);
-    if (uploadComponent.value) {
-      uploadComponent.value.setError(result.error);
+    talentFTDs[talent].count += parseInt(c.FTDObtenido) || 0;
+  });
+  
+  const topTalentEntry = Object.entries(talentFTDs)
+    .sort((a, b) => b[1].count - a[1].count)[0];
+  const topTalent = topTalentEntry ? topTalentEntry[0].split(' ')[0] : 'N/A';
+  const topTalentHandle = topTalentEntry ? topTalentEntry[1].handle : '';
+  
+  // Plataforma top (extraer dominio de PlataformaTalento)
+  const platformCounts = {};
+  campaigns.forEach(c => {
+    const platform = c.PlataformaTalento || '';
+    const domain = platform.includes('kick.com') ? 'Kick' : 
+                   platform.includes('twitch') ? 'Twitch' :
+                   platform.includes('youtube') ? 'YouTube' : 'Other';
+    if (!platformCounts[domain]) {
+      platformCounts[domain] = 0;
+    }
+    platformCounts[domain] += parseInt(c.FTDObtenido) || 0;
+  });
+  
+  const topPlatformEntry = Object.entries(platformCounts)
+    .sort((a, b) => b[1] - a[1])[0];
+  const topPlatform = topPlatformEntry ? topPlatformEntry[0] : 'N/A';
+  const topPlatformFTDs = topPlatformEntry ? topPlatformEntry[1] : 0;
+  
+  return {
+    totalFTDs,
+    targetFTDs,
+    metaProgress: Number(metaProgress.toFixed(1)),
+    avgCPA,
+    topTalent,
+    topTalentHandle,
+    topPlatform,
+    topPlatformFTDs
+  };
+});
+
+// Normalizar datos del JSON (agregar campos faltantes solo si son necesarios)
+const normalizeCampaignData = (data) => {
+  return data.map(campaign => {
+    // Agregar campos faltantes con valores por defecto (0)
+    const normalized = { ...campaign };
+    
+    // Validar y normalizar entregables_fecha
+    if (normalized.entregables_fecha) {
+      // Asegurar que la fecha esté en formato ISO (YYYY-MM-DD)
+      const dateStr = normalized.entregables_fecha.toString();
+      // Si es una fecha válida, mantenerla; si no, intentar parsearla
+      const dateObj = new Date(dateStr);
+      if (!isNaN(dateObj.getTime())) {
+        // Formatear a ISO si no está ya en ese formato
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        normalized.entregables_fecha = `${year}-${month}-${day}`;
+      }
+    }
+    
+    // Si no tiene Views, usar Peak Viewers como aproximación
+    if (normalized.Views === undefined && normalized['Peak Viewers']) {
+      normalized.Views = normalized['Peak Viewers'];
+    } else if (normalized.Views === undefined) {
+      normalized.Views = 0;
+    }
+    
+    // Solo usar valores reales del JSON, si no existen poner 0
+    if (normalized.Likes === undefined) {
+      normalized.Likes = 0;
+    }
+    
+    if (normalized.Comments === undefined) {
+      normalized.Comments = 0;
+    }
+    
+    return normalized;
+  });
+};
+
+// Cargar datos desde API o JSON local
+onMounted(async () => {
+  if (dashboardStore.campaigns.length === 0) {
+    try {
+      dashboardStore.setLoading(true);
+      
+      // OPCIÓN 1: Cargar desde API (recomendado)
+      let rawData;
+      try {
+        rawData = await fetchCampaigns();
+      } catch (apiError) {
+        console.warn('Error al cargar desde API, usando JSON local como fallback:', apiError);
+        // OPCIÓN 2: Fallback a JSON local si la API falla
+        const campaignsData = await import('@/data/campaigns.json');
+        rawData = campaignsData.default || campaignsData;
+      }
+      
+      // Normalizar y guardar datos
+      const normalizedData = normalizeCampaignData(rawData);
+      dashboardStore.setCampaigns(normalizedData);
+    } catch (error) {
+      dashboardStore.setError('Error loading campaign data: ' + error.message);
+      console.error('Error completo:', error);
+    } finally {
+      dashboardStore.setLoading(false);
     }
   }
-  
-  dashboardStore.setLoading(false);
-};
+});
 
 const handleUpdateFilters = (newFilters) => {
   dashboardStore.setFilters(newFilters);
@@ -247,10 +330,36 @@ const handleSearchUpdate = (searchQuery) => {
   dashboardStore.setFilters({ searchQuery });
 };
 
-const handleModalClose = () => {
-  if (uploadComponent.value) {
-    uploadComponent.value.clearFile();
-  }
+const handleViewCampaign = (campaign) => {
+  selectedCampaign.value = campaign;
+  selectedDeliverable.value = null; // Cerrar entregable si está abierto
+  // Scroll suave hacia el panel de detalles
+  setTimeout(() => {
+    const element = document.querySelector('.campaign-details-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+};
+
+const handleViewDeliverable = (deliverable) => {
+  selectedDeliverable.value = deliverable;
+  // Scroll suave hacia el panel de detalles del entregable
+  setTimeout(() => {
+    const element = document.querySelector('.deliverable-details-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+};
+
+const getRelatedDeliverablesForSelected = () => {
+  if (!selectedDeliverable.value || !selectedCampaign.value) return [];
+  // Obtener entregables del mismo talento y cliente
+  return dashboardStore.campaigns.filter(c => 
+    c.NombreTalento === selectedDeliverable.value.NombreTalento &&
+    c.NombreCliente === selectedDeliverable.value.NombreCliente
+  );
 };
 </script>
 
@@ -263,7 +372,18 @@ const handleModalClose = () => {
 
 .dashboard-header {
   margin-bottom: var(--spacing-2xl);
-  text-align: center;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.header-title {
+  flex: 1;
 }
 
 .dashboard-title {
@@ -273,13 +393,144 @@ const handleModalClose = () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .dashboard-subtitle {
   font-size: 1rem;
   color: var(--text-secondary);
   margin: 0;
+}
+
+.header-filters {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.filter-select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  min-width: 140px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 234, 255, 0.1);
+}
+
+/* KPIs Grid */
+.kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+@media (min-width: 1200px) {
+  .kpis-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Filtros Fijos (Sticky) */
+.filters-section-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary);
+  padding: var(--spacing-md) 0;
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chart Section */
+.chart-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.chart-wrapper {
+  height: 400px;
+}
+
+/* Campaign Details Section */
+.campaign-details-section {
+  margin-bottom: var(--spacing-2xl);
+  margin-top: var(--spacing-2xl);
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Deliverable Details Section */
+.deliverable-details-section {
+  margin-bottom: var(--spacing-2xl);
+  margin-top: var(--spacing-2xl);
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Tabla Section */
+.table-section {
+  margin-top: var(--spacing-2xl);
+}
+
+/* Botón Scroll to Top */
+.scroll-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 2px solid var(--accent-primary);
+  color: var(--color-black);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(var(--accent-primary-rgb), 0.4);
+  transition: all var(--transition-base);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.scroll-to-top:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(var(--accent-primary-rgb), 0.6);
+  background: var(--accent-primary);
+}
+
+.scroll-to-top svg {
+  stroke: var(--color-black);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 768px) {
@@ -290,119 +541,22 @@ const handleModalClose = () => {
   .dashboard-title {
     font-size: 2rem;
   }
-}
 
-.navbar {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-lg) var(--spacing-xl);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-lg);
-  box-shadow: var(--shadow-md);
-}
-
-.navbar-brand {
-  flex: 1;
-}
-
-.navbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.btn-upload-navbar {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-pink) 100%);
-  border: none;
-  border-radius: var(--radius-md);
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  box-shadow: 0 2px 8px rgba(0, 234, 255, 0.3);
-}
-
-.btn-upload-navbar:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 234, 255, 0.4);
-}
-
-/* KPIs Container - 5 columnas sin espacios */
-.kpis-container {
-  display: flex;
-  margin-left: 0;
-  margin-right: 0;
-  gap: 0;
-}
-
-.kpis-container .col-kpi {
-  flex: 1 1 20%;
-  max-width: 20%;
-  padding-left: calc(var(--spacing-xs) / 2);
-  padding-right: calc(var(--spacing-xs) / 2);
-  margin-bottom: 0;
-}
-
-.kpis-container .col-kpi:first-child {
-  padding-left: 0;
-}
-
-.kpis-container .col-kpi:last-child {
-  padding-right: 0;
-}
-
-/* Responsive para tablets */
-@media (max-width: 991px) {
-  .kpis-container .col-kpi {
-    flex: 1 1 33.333%;
-    max-width: 33.333%;
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
   }
-  
-  .kpis-container .col-kpi:nth-child(4) {
-    flex: 1 1 50%;
-    max-width: 50%;
-  }
-  
-  .kpis-container .col-kpi:nth-child(5) {
-    flex: 1 1 50%;
-    max-width: 50%;
-  }
-}
 
-/* Responsive para móviles */
-@media (max-width: 767px) {
-  .kpis-container {
-    flex-wrap: wrap;
+  .header-filters {
+    width: 100%;
   }
-  
-  .kpis-container .col-kpi {
-    flex: 1 1 50%;
-    max-width: 50%;
-    padding-left: calc(var(--spacing-xs) / 2);
-    padding-right: calc(var(--spacing-xs) / 2);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  .kpis-container .col-kpi:nth-child(5) {
-    flex: 1 1 100%;
-    max-width: 100%;
-  }
-}
 
-@media (max-width: 575px) {
-  .kpis-container .col-kpi {
-    flex: 1 1 100%;
-    max-width: 100%;
-    padding-left: 0;
-    padding-right: 0;
+  .filter-select {
+    flex: 1;
+  }
+
+  .kpis-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

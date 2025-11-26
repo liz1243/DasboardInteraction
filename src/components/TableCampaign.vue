@@ -1,7 +1,7 @@
 <template>
   <div class="table-container glass-card">
     <div class="table-header">
-      <h3 class="table-title">Detailed Campaigns Table</h3>
+      <h3 class="table-title">Active Campaigns</h3>
       <div class="table-actions">
         <div class="table-stats" v-if="paginatedCampaigns.length > 0">
           Showing {{ startIndex + 1 }}–{{ endIndex }} of {{ totalItems }} campaigns
@@ -46,10 +46,10 @@
       <div class="sort-controls">
         <label class="sort-label">Sort by:</label>
         <select v-model="sortBy" @change="handleSort" class="select-modern">
+          <option value="ftds">FTDs</option>
+          <option value="progress">% Target</option>
+          <option value="cpa">CPA</option>
           <option value="views">Views</option>
-          <option value="likes">Likes</option>
-          <option value="comments">Comments</option>
-          <option value="engagement">Engagement</option>
           <option value="fecha">Date</option>
         </select>
         <button @click="toggleSortOrder" class="btn-sort" type="button" :title="sortOrder === 'desc' ? 'Descending' : 'Ascending'">
@@ -76,79 +76,88 @@
       <p>No results found.</p>
     </div>
 
-    <div v-else class="table-wrapper">
+    <div v-else class="table-wrapper-scroll">
       <table class="table-modern">
         <thead>
           <tr>
             <th>Campaign</th>
-            <th>Client</th>
-            <th>Talent</th>
-            <th>URL</th>
-            <th>Date</th>
-            <th class="text-end sortable" @click="setSort('views')">
-              Views
-              <span v-if="sortBy === 'views'" class="sort-indicator">
-                {{ sortOrder === 'desc' ? '↓' : '↑' }}
-              </span>
-            </th>
-            <th class="text-end sortable" @click="setSort('likes')">
-              Likes
-              <span v-if="sortBy === 'likes'" class="sort-indicator">
-                {{ sortOrder === 'desc' ? '↓' : '↑' }}
-              </span>
-            </th>
-            <th class="text-end sortable" @click="setSort('comments')">
-              Comments
-              <span v-if="sortBy === 'comments'" class="sort-indicator">
-                {{ sortOrder === 'desc' ? '↓' : '↑' }}
-              </span>
-            </th>
-            <th class="text-end sortable" @click="setSort('engagement')">
-              Engagement %
-              <span v-if="sortBy === 'engagement'" class="sort-indicator">
-                {{ sortOrder === 'desc' ? '↓' : '↑' }}
-              </span>
-            </th>
+            <th>Status</th>
+            <th>Period</th>
+            <th>Target</th>
+            <th>FTDs</th>
+            <th class="text-end">% Target</th>
+            <th class="text-end">CPA</th>
+            <th class="text-end">Views</th>
+            <th class="text-end">Avg Viewers</th>
+            <th class="text-end">Peak Viewers</th>
+            <th class="text-end">Minutes</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(campaign, index) in paginatedCampaigns" :key="index">
+          <template v-for="(campaign, index) in paginatedCampaigns" :key="`campaign-${campaign.entregables_URL || index}-${campaign.entregables_fecha || index}`">
+          <tr>
             <td>
               <div class="campaign-name">{{ campaign.NombreCampana || '-' }}</div>
             </td>
             <td>
-              <span class="campaign-client">{{ campaign.NombreCliente || '-' }}</span>
+              <span :class="['status-badge', getStatusClass(campaign)]">
+                {{ getStatus(campaign) }}
+              </span>
             </td>
             <td>
-              <span class="campaign-talent">{{ campaign.NombreTalento || '-' }}</span>
+              <span class="campaign-date">{{ formatDateRange(campaign.entregables_fecha) }}</span>
             </td>
             <td>
-              <a 
-                v-if="campaign.entregables_URL" 
-                :href="campaign.entregables_URL" 
-                target="_blank" 
-                class="campaign-url"
-              >
-                {{ truncateUrl(campaign.entregables_URL) }}
-              </a>
-              <span v-else class="text-muted">-</span>
+              <span class="metric-value">{{ formatNumber(campaign.FTDs || 0) }}</span>
             </td>
             <td>
-              <span class="campaign-date">{{ formatDate(campaign.entregables_fecha) }}</span>
+              <span class="metric-value metric-ftds">{{ formatNumber(campaign.FTDObtenido || 0) }}</span>
             </td>
             <td class="text-end">
-              <span class="metric-value metric-views">{{ formatNumber(campaign.Views) }}</span>
+              <span :class="['progress-percent', getProgressClass(campaign)]">
+                {{ calculateProgress(campaign) }}%
+              </span>
             </td>
             <td class="text-end">
-              <span class="metric-value metric-likes">{{ formatNumber(campaign.Likes) }}</span>
+              <span class="metric-value metric-cpa">${{ calculateCPA(campaign) }}</span>
             </td>
             <td class="text-end">
-              <span class="metric-value metric-comments">{{ formatNumber(campaign.Comments) }}</span>
+              <span class="metric-value metric-views">{{ formatNumber(campaign.Views || 0) }}</span>
             </td>
             <td class="text-end">
-              <span class="metric-engagement">{{ calculateEngagement(campaign) }}%</span>
+              <span class="metric-value">{{ formatNumber(campaign['Avg Viewers'] || 0) }}</span>
+            </td>
+            <td class="text-end">
+              <span class="metric-value">{{ formatNumber(campaign['Peak Viewers'] || 0) }}</span>
+            </td>
+            <td class="text-end">
+              <span class="metric-value">{{ formatNumber(campaign['Minutes Watched'] || 0) }}</span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  @click="handleViewCampaign(campaign)"
+                  class="btn-details btn-campaign"
+                  title="View campaign details"
+                  type="button"
+                >
+                  View campaign →
+                </button>
+              </div>
             </td>
           </tr>
+          <!-- Panel de detalles del entregable expandible -->
+          <tr v-if="expandedIndex === index" class="details-row">
+            <td colspan="12" class="details-cell">
+              <DeliverableDetails 
+                :deliverable="campaign" 
+                :related-deliverables="getRelatedDeliverables(campaign)"
+                @close="closeDetails" 
+              />
+            </td>
+          </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -185,6 +194,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { exportToExcel, exportToCSV } from '@/utils/exportUtils.js';
+import DeliverableDetails from './DeliverableDetails.vue';
 
 const props = defineProps({
   campaigns: {
@@ -197,13 +207,14 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update-search']);
+const emit = defineEmits(['update-search', 'view-campaign']);
 
 const localSearchQuery = ref(props.searchQuery || '');
-const sortBy = ref('engagement');
+const sortBy = ref('ftds');
 const sortOrder = ref('desc');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
+const expandedIndex = ref(null);
 
 // Computed - Campañas filtradas por búsqueda
 const filteredCampaigns = computed(() => {
@@ -230,28 +241,31 @@ const sortedCampaigns = computed(() => {
     let aValue, bValue;
     
     switch (sortBy.value) {
+      case 'ftds':
+        aValue = parseInt(a.FTDObtenido) || 0;
+        bValue = parseInt(b.FTDObtenido) || 0;
+        break;
+      case 'progress':
+        const aTarget = parseInt(a.FTDs) || 0;
+        const aObtained = parseInt(a.FTDObtenido) || 0;
+        aValue = aTarget > 0 ? (aObtained / aTarget) * 100 : 0;
+        
+        const bTarget = parseInt(b.FTDs) || 0;
+        const bObtained = parseInt(b.FTDObtenido) || 0;
+        bValue = bTarget > 0 ? (bObtained / bTarget) * 100 : 0;
+        break;
+      case 'cpa':
+        const aFtds = parseInt(a.FTDObtenido) || 0;
+        const aBudget = (parseInt(a.FTDs) || 0) * 50;
+        aValue = aFtds > 0 ? aBudget / aFtds : 0;
+        
+        const bFtds = parseInt(b.FTDObtenido) || 0;
+        const bBudget = (parseInt(b.FTDs) || 0) * 50;
+        bValue = bFtds > 0 ? bBudget / bFtds : 0;
+        break;
       case 'views':
         aValue = parseInt(a.Views) || 0;
         bValue = parseInt(b.Views) || 0;
-        break;
-      case 'likes':
-        aValue = parseInt(a.Likes) || 0;
-        bValue = parseInt(b.Likes) || 0;
-        break;
-      case 'comments':
-        aValue = parseInt(a.Comments) || 0;
-        bValue = parseInt(b.Comments) || 0;
-        break;
-      case 'engagement':
-        const aViews = parseInt(a.Views) || 0;
-        const aLikes = parseInt(a.Likes) || 0;
-        const aComments = parseInt(a.Comments) || 0;
-        aValue = aViews > 0 ? ((aLikes + aComments) / aViews) * 100 : 0;
-        
-        const bViews = parseInt(b.Views) || 0;
-        const bLikes = parseInt(b.Likes) || 0;
-        const bComments = parseInt(b.Comments) || 0;
-        bValue = bViews > 0 ? ((bLikes + bComments) / bViews) * 100 : 0;
         break;
       case 'fecha':
         aValue = new Date(a.entregables_fecha || 0).getTime();
@@ -298,6 +312,59 @@ const formatDate = (date) => {
   } catch {
     return date;
   }
+};
+
+const formatDateRange = (date) => {
+  if (!date) return '-';
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return date;
+    return dateObj.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short'
+    });
+  } catch {
+    return date;
+  }
+};
+
+const getStatus = (campaign) => {
+  // Determinar estado basado en fecha y progreso
+  const progress = calculateProgress(campaign);
+  if (progress >= 100) return 'Completed';
+  const date = new Date(campaign.entregables_fecha);
+  const now = new Date();
+  if (date > now) return 'Active';
+  return 'Paused';
+};
+
+const getStatusClass = (campaign) => {
+  const status = getStatus(campaign);
+  if (status === 'Completed') return 'status-completed';
+  if (status === 'Active') return 'status-active';
+  return 'status-paused';
+};
+
+const calculateProgress = (campaign) => {
+  const target = parseInt(campaign.FTDs) || 0;
+  const obtained = parseInt(campaign.FTDObtenido) || 0;
+  if (target === 0) return 0;
+  return Number(((obtained / target) * 100).toFixed(1));
+};
+
+const getProgressClass = (campaign) => {
+  const progress = calculateProgress(campaign);
+  if (progress >= 100) return 'progress-green';
+  if (progress >= 70) return 'progress-yellow';
+  return 'progress-red';
+};
+
+const calculateCPA = (campaign) => {
+  const ftds = parseInt(campaign.FTDObtenido) || 0;
+  // Asumiendo un presupuesto estimado basado en FTDs meta
+  const estimatedBudget = (parseInt(campaign.FTDs) || 0) * 50; // $50 por FTD meta
+  if (ftds === 0) return '0.00';
+  return Number((estimatedBudget / ftds).toFixed(2));
 };
 
 const calculateEngagement = (campaign) => {
@@ -368,7 +435,37 @@ watch(() => props.searchQuery, (newVal) => {
 
 watch(() => props.campaigns, () => {
   currentPage.value = 1;
+  expandedIndex.value = null;
 });
+
+const toggleDetails = (index) => {
+  if (expandedIndex.value === index) {
+    expandedIndex.value = null;
+  } else {
+    expandedIndex.value = index;
+  }
+};
+
+const closeDetails = () => {
+  expandedIndex.value = null;
+};
+
+const getRelatedDeliverables = (campaign) => {
+  // Obtener entregables del mismo talento
+  return props.campaigns.filter(c => 
+    c.NombreTalento === campaign.NombreTalento &&
+    c.NombreCliente === campaign.NombreCliente
+  );
+};
+
+const getCampaignId = (campaign) => {
+  // Generate unique key from campaign data
+  return campaign.entregables_URL || `${campaign.NombreCampana}-${campaign.NombreCliente}-${campaign.entregables_fecha}`;
+};
+
+const handleViewCampaign = (campaign) => {
+  emit('view-campaign', campaign);
+};
 </script>
 
 <style scoped>
@@ -541,6 +638,33 @@ watch(() => props.campaigns, () => {
   border-radius: var(--radius-lg);
 }
 
+.table-wrapper-scroll {
+  max-height: 700px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.table-wrapper-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-wrapper-scroll::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.table-wrapper-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.table-wrapper-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
 /* Ensure table content has 14px font size */
 .table-modern,
 .table-modern th,
@@ -623,6 +747,61 @@ watch(() => props.campaigns, () => {
   font-variant-numeric: tabular-nums;
 }
 
+.metric-ftds {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.metric-cpa {
+  color: var(--accent-pink);
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-active {
+  background: rgba(77, 255, 145, 0.1);
+  color: var(--accent-green);
+  border: 1px solid rgba(77, 255, 145, 0.3);
+}
+
+.status-completed {
+  background: rgba(91, 141, 239, 0.1);
+  color: var(--accent-blue);
+  border: 1px solid rgba(91, 141, 239, 0.3);
+}
+
+.status-paused {
+  background: rgba(255, 123, 247, 0.1);
+  color: var(--accent-pink);
+  border: 1px solid rgba(255, 123, 247, 0.3);
+}
+
+.progress-percent {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-green {
+  color: var(--accent-green);
+}
+
+.progress-yellow {
+  color: #ffd700;
+}
+
+.progress-red {
+  color: #ff6b6b;
+}
+
 .pagination {
   display: flex;
   justify-content: space-between;
@@ -682,5 +861,51 @@ watch(() => props.campaigns, () => {
   .search-box {
     min-width: 100%;
   }
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.btn-details {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  color: var(--accent-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-details:hover {
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  border-color: var(--accent-primary);
+  transform: translateX(2px);
+}
+
+.btn-campaign {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-campaign:hover {
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  border-color: var(--accent-primary);
+}
+
+.details-row {
+  background: var(--bg-tertiary);
+}
+
+.details-cell {
+  padding: 0 !important;
+  border-top: 2px solid var(--border-color);
 }
 </style>

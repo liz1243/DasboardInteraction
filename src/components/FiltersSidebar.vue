@@ -31,7 +31,7 @@
             >
               All clients
             </button>
-            <button 
+            <button
               v-for="client in availableClients" 
               :key="client"
               @click="selectFilter('client', client)"
@@ -82,103 +82,6 @@
           </div>
         </div>
 
-        <!-- Botón Fechas -->
-        <div class="filter-button-group">
-          <button 
-            @click="toggleDropdown('dates')"
-            :class="['filter-btn', { 'filter-btn-active': hasDateFilter }]"
-            type="button"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>Dates</span>
-            <span v-if="hasDateFilter" class="filter-badge">Filtered</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <div v-if="activeDropdown === 'dates'" class="dropdown-menu dropdown-menu-large">
-            <div class="dropdown-dates">
-              <div class="date-input-group">
-                <label>From</label>
-                <input
-                  type="date"
-                  v-model="localFilters.dateStart"
-                  @change="updateFilters"
-                  class="input-date"
-                />
-              </div>
-              <div class="date-input-group">
-                <label>To</label>
-                <input
-                  type="date"
-                  v-model="localFilters.dateEnd"
-                  @change="updateFilters"
-                  class="input-date"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Botón Métricas -->
-        <div class="filter-button-group">
-          <button 
-            @click="toggleDropdown('metrics')"
-            :class="['filter-btn', { 'filter-btn-active': hasMetricsFilter }]"
-            type="button"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            <span>Metrics</span>
-            <span v-if="hasMetricsFilter" class="filter-badge">Filtered</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <div v-if="activeDropdown === 'metrics'" class="dropdown-menu dropdown-menu-large">
-            <div class="dropdown-metrics">
-              <div class="metric-input-group">
-                <label>Min Views</label>
-                <input
-                  type="number"
-                  v-model.number="localFilters.viewsMin"
-                  @input="updateFilters"
-                  placeholder="e.g. 1000"
-                  class="input-number"
-                />
-              </div>
-              <div class="metric-input-group">
-                <label>Min Likes</label>
-                <input
-                  type="number"
-                  v-model.number="localFilters.likesMin"
-                  @input="updateFilters"
-                  placeholder="e.g. 50"
-                  class="input-number"
-                />
-              </div>
-              <div class="metric-input-group">
-                <label>Min Engagement (%)</label>
-                <input
-                  type="number"
-                  v-model.number="localFilters.engagementMin"
-                  @input="updateFilters"
-                  placeholder="e.g. 5"
-                  step="0.1"
-                  class="input-number"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Botón Limpiar -->
         <button 
@@ -202,7 +105,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useDashboardStore } from '@/modules/dashboard/dashboardStore.js';
+import { getClientRoute } from '@/utils/routeHelpers.js';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 
 const props = defineProps({
   filters: {
@@ -227,19 +132,9 @@ const hasData = computed(() => {
   return props.availableClients.length > 0 || props.availableTalents.length > 0;
 });
 
-const hasDateFilter = computed(() => {
-  return localFilters.value.dateStart || localFilters.value.dateEnd;
-});
-
-const hasMetricsFilter = computed(() => {
-  return localFilters.value.viewsMin || localFilters.value.likesMin || localFilters.value.engagementMin;
-});
-
 const hasActiveFilters = computed(() => {
   return localFilters.value.client !== 'all' ||
-         localFilters.value.talent !== 'all' ||
-         hasDateFilter.value ||
-         hasMetricsFilter.value;
+         localFilters.value.talent !== 'all';
 });
 
 watch(() => props.filters, (newFilters) => {
@@ -249,13 +144,20 @@ watch(() => props.filters, (newFilters) => {
 // Si cambia el cliente (y por ende la lista de talentos), resetear talento si no es válido
 watch(
   () => [props.availableTalents, localFilters.value.client],
-  () => {
-    if (
-      localFilters.value.talent !== 'all' &&
-      !props.availableTalents.includes(localFilters.value.talent)
-    ) {
-      localFilters.value.talent = 'all';
-      updateFilters();
+  (newVal, oldVal) => {
+    // Si cambió el cliente o la lista de talentos disponibles
+    const clientChanged = oldVal && oldVal[1] !== newVal[1];
+    const talentsChanged = oldVal && oldVal[0] !== newVal[0];
+    
+    if (clientChanged || talentsChanged) {
+      // Si hay un talento seleccionado que no está en la nueva lista, resetearlo
+      if (
+        localFilters.value.talent !== 'all' &&
+        !props.availableTalents.includes(localFilters.value.talent)
+      ) {
+        localFilters.value.talent = 'all';
+        updateFilters();
+      }
     }
   },
   { deep: false }
@@ -269,9 +171,29 @@ const closeDropdown = () => {
   activeDropdown.value = null;
 };
 
-const selectFilter = (key, value) => {
+const dashboardStore = useDashboardStore();
+
+const selectFilter = async (key, value) => {
   localFilters.value[key] = value;
-  updateFilters();
+  
+  // Si se selecciona un cliente, resetear el talento si no es válido para ese cliente
+  if (key === 'client') {
+    // Actualizar filtros primero para que availableTalents se actualice
+    updateFilters();
+    
+    // Esperar a que availableTalents se actualice en el siguiente tick
+    await nextTick();
+    if (
+      localFilters.value.talent !== 'all' &&
+      !props.availableTalents.includes(localFilters.value.talent)
+    ) {
+      localFilters.value.talent = 'all';
+      updateFilters();
+    }
+  } else {
+    updateFilters();
+  }
+  
   closeDropdown();
 };
 
@@ -283,12 +205,7 @@ const clearAllFilters = () => {
   localFilters.value = {
     ...localFilters.value,
     client: 'all',
-    talent: 'all',
-    dateStart: '',
-    dateEnd: '',
-    viewsMin: '',
-    likesMin: '',
-    engagementMin: ''
+    talent: 'all'
   };
   emit('clear-filters');
   closeDropdown();
@@ -353,14 +270,14 @@ onUnmounted(() => {
 
 .filter-btn:hover:not(:disabled) {
   background: var(--bg-card);
-  border-color: var(--accent-cyan);
+  border-color: var(--accent-primary);
   color: var(--text-primary);
 }
 
 .filter-btn-active {
-  background: rgba(0, 234, 255, 0.1);
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .filter-btn svg:first-child {
@@ -378,8 +295,8 @@ onUnmounted(() => {
 
 .filter-badge {
   padding: 2px 6px;
-  background: var(--accent-cyan);
-  color: white;
+  background: var(--accent-primary);
+  color: var(--color-black);
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
@@ -453,6 +370,7 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-decoration: none;
 }
 
 .dropdown-item:hover {
@@ -461,8 +379,8 @@ onUnmounted(() => {
 }
 
 .dropdown-item-active {
-  background: rgba(0, 234, 255, 0.1);
-  color: var(--accent-cyan);
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
@@ -504,8 +422,8 @@ onUnmounted(() => {
 .input-date:focus,
 .input-number:focus {
   outline: none;
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 3px rgba(0, 234, 255, 0.1);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1);
 }
 
 .dropdown-overlay {
