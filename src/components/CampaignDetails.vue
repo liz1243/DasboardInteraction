@@ -27,8 +27,8 @@
         <span class="kpi-subtitle">of {{ formatNumber(campaign.FTDs || 0) }} target</span>
       </div>
       <div class="kpi-card">
-        <span class="kpi-label">CPA</span>
-        <span class="kpi-value metric-pink">${{ calculateCPA(campaign) }}</span>
+        <span class="kpi-label">TBA</span>
+        <span class="kpi-value metric-pink">${{ calculateTBA(campaign) }}</span>
       </div>
       <div class="kpi-card">
         <span class="kpi-label">Deliverables</span>
@@ -83,8 +83,8 @@
               <th>Fecha</th>
               <th>FTDs</th>
               <th>Views</th>
-              <th>Likes</th>
-              <th>Comments</th>
+              <th v-if="hasYouTubeCampaigns">Likes</th>
+              <th v-if="hasYouTubeCampaigns">Comments</th>
               <th>Avg Viewers</th>
               <th>Peak Viewers</th>
               <th>Minutes</th>
@@ -108,8 +108,8 @@
               <td>{{ formatDateShort(item.entregables_fecha) }}</td>
               <td class="text-end">{{ formatNumber(item.FTDObtenido || 0) }}</td>
               <td class="text-end">{{ formatNumber(item.Views || 0) }}</td>
-              <td class="text-end">{{ formatNumber(item.Likes || 0) }}</td>
-              <td class="text-end">{{ formatNumber(item.Comments || 0) }}</td>
+              <td v-if="hasYouTubeCampaigns" class="text-end">{{ isYouTube(item.PlataformaTalento) ? formatNumber(item.Likes || 0) : '-' }}</td>
+              <td v-if="hasYouTubeCampaigns" class="text-end">{{ isYouTube(item.PlataformaTalento) ? formatNumber(item.Comments || 0) : '-' }}</td>
               <td class="text-end">{{ formatNumber(item['Avg Viewers'] || 0) }}</td>
               <td class="text-end">{{ formatNumber(item['Peak Viewers'] || 0) }}</td>
               <td class="text-end">{{ formatNumber(item['Minutes Watched'] || 0) }}</td>
@@ -215,12 +215,21 @@ const extractPlatform = (url) => {
   return 'Otra plataforma';
 };
 
+const isYouTube = (url) => {
+  return url && url.includes('youtube');
+};
+
 // Obtener campañas relacionadas (misma campaña y cliente)
 const relatedCampaigns = computed(() => {
   return dashboardStore.campaigns.filter(c => 
     c.NombreCampana === props.campaign.NombreCampana &&
     c.NombreCliente === props.campaign.NombreCliente
   );
+});
+
+// Verificar si hay alguna campaña de YouTube
+const hasYouTubeCampaigns = computed(() => {
+  return relatedCampaigns.value.some(c => isYouTube(c.PlataformaTalento));
 });
 
 // Top talento
@@ -245,7 +254,7 @@ const topTalentData = computed(() => {
 });
 
 const topTalentName = computed(() => {
-  return topTalentData.value.labels[0] || 'N/A';
+  return topTalentData.value.labels[0] || '-';
 });
 
 const topTalentFTDs = computed(() => {
@@ -318,7 +327,7 @@ const getProgressClass = (campaign) => {
   return 'metric-red';
 };
 
-const calculateCPA = (campaign) => {
+const calculateTBA = (campaign) => {
   const ftds = parseInt(campaign.FTDObtenido) || 0;
   const estimatedBudget = (parseInt(campaign.FTDs) || 0) * 50;
   if (ftds === 0) return '0.00';
@@ -327,13 +336,19 @@ const calculateCPA = (campaign) => {
 
 const calculateEngagement = (campaign) => {
   const views = parseInt(campaign.Views) || 0;
-  const likes = parseInt(campaign.Likes) || 0;
-  const comments = parseInt(campaign.Comments) || 0;
   
   if (views === 0) return '0.00';
   
-  const engagement = ((likes + comments) / views) * 100;
-  return engagement.toFixed(2);
+  // Solo calcular engagement con likes/comments si es YouTube
+  if (isYouTube(campaign.PlataformaTalento)) {
+    const likes = parseInt(campaign.Likes) || 0;
+    const comments = parseInt(campaign.Comments) || 0;
+    const engagement = ((likes + comments) / views) * 100;
+    return engagement.toFixed(2);
+  }
+  
+  // Para otras plataformas, retornar 0 o un valor por defecto
+  return '0.00';
 };
 
 const getStatus = (campaign) => {

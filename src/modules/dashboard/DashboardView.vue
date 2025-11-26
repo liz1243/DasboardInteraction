@@ -39,8 +39,8 @@
         </template>
       </KpiCard>
       <KpiCard
-        title="Average CPA"
-        :value="ftdsData.avgCPA"
+        title="Average TBA"
+        :value="ftdsData.avgTBA"
         format="currency"
         color="pink"
       >
@@ -200,8 +200,8 @@ const ftdsData = computed(() => {
   // % Meta alcanzada
   const metaProgress = targetFTDs > 0 ? (totalFTDs / targetFTDs) * 100 : 0;
   
-  // CPA promedio (asumiendo un presupuesto estimado)
-  const avgCPA = totalFTDs > 0 ? 50 : 0; // Placeholder - ajustar según datos reales
+  // TBA promedio (asumiendo un presupuesto estimado)
+  const avgTBA = totalFTDs > 0 ? 50 : 0; // Placeholder - ajustar según datos reales
   
   // Top talento por FTDs
   const talentFTDs = {};
@@ -215,7 +215,7 @@ const ftdsData = computed(() => {
   
   const topTalentEntry = Object.entries(talentFTDs)
     .sort((a, b) => b[1].count - a[1].count)[0];
-  const topTalent = topTalentEntry ? topTalentEntry[0].split(' ')[0] : 'N/A';
+  const topTalent = topTalentEntry ? topTalentEntry[0].split(' ')[0] : '-';
   const topTalentHandle = topTalentEntry ? topTalentEntry[1].handle : '';
   
   // Plataforma top (extraer dominio de PlataformaTalento)
@@ -240,7 +240,7 @@ const ftdsData = computed(() => {
     totalFTDs,
     targetFTDs,
     metaProgress: Number(metaProgress.toFixed(1)),
-    avgCPA,
+    avgTBA,
     topTalent,
     topTalentHandle,
     topPlatform,

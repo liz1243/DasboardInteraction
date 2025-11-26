@@ -3,12 +3,19 @@ import * as XLSX from 'xlsx';
 /**
  * Exporta datos a Excel
  */
+const isYouTube = (url) => {
+  return url && url.includes('youtube');
+};
+
 export function exportToExcel(campaigns, filename = 'campañas') {
   const data = campaigns.map(campaign => {
     const views = parseInt(campaign.Views) || 0;
     const likes = parseInt(campaign.Likes) || 0;
     const comments = parseInt(campaign.Comments) || 0;
-    const engagement = views > 0 ? ((likes + comments) / views) * 100 : 0;
+    // Solo calcular engagement con likes/comments si es YouTube
+    const engagement = views > 0 && isYouTube(campaign.PlataformaTalento) 
+      ? ((likes + comments) / views) * 100 
+      : 0;
 
     return {
       'Campaña': campaign.NombreCampana || '',
@@ -54,7 +61,10 @@ export function exportToCSV(campaigns, filename = 'campañas') {
     const views = parseInt(campaign.Views) || 0;
     const likes = parseInt(campaign.Likes) || 0;
     const comments = parseInt(campaign.Comments) || 0;
-    const engagement = views > 0 ? ((likes + comments) / views) * 100 : 0;
+    // Solo calcular engagement con likes/comments si es YouTube
+    const engagement = views > 0 && isYouTube(campaign.PlataformaTalento) 
+      ? ((likes + comments) / views) * 100 
+      : 0;
 
     return [
       campaign.NombreCampana || '',

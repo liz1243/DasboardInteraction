@@ -31,15 +31,15 @@
         <span class="kpi-label">Views</span>
         <span class="kpi-value metric-cyan">{{ formatNumber(deliverable.Views || 0) }}</span>
       </div>
-      <div class="kpi-card">
+      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="kpi-card">
         <span class="kpi-label">Likes</span>
         <span class="kpi-value metric-pink">{{ formatNumber(deliverable.Likes || 0) }}</span>
       </div>
-      <div class="kpi-card">
+      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="kpi-card">
         <span class="kpi-label">Comments</span>
         <span class="kpi-value metric-blue">{{ formatNumber(deliverable.Comments || 0) }}</span>
       </div>
-      <div class="kpi-card">
+      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="kpi-card">
         <span class="kpi-label">Engagement Rate</span>
         <span class="kpi-value metric-green">{{ calculateEngagement(deliverable) }}%</span>
       </div>
@@ -94,7 +94,7 @@
 
     <!-- Engagement Breakdown -->
     <div class="engagement-breakdown">
-      <div class="breakdown-card">
+      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="breakdown-card">
         <div class="breakdown-header">
           <span class="breakdown-label">Like Rate</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-pink">
@@ -107,7 +107,7 @@
         </p>
       </div>
 
-      <div class="breakdown-card">
+      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="breakdown-card">
         <div class="breakdown-header">
           <span class="breakdown-label">Comment Rate</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-blue">
@@ -256,15 +256,25 @@ const extractPlatform = (url) => {
   return 'Otra plataforma';
 };
 
+const isYouTube = (url) => {
+  return url && url.includes('youtube');
+};
+
 const calculateEngagement = (deliverable) => {
   const views = parseInt(deliverable.Views) || 0;
-  const likes = parseInt(deliverable.Likes) || 0;
-  const comments = parseInt(deliverable.Comments) || 0;
   
   if (views === 0) return '0.00';
   
-  const engagement = ((likes + comments) / views) * 100;
-  return engagement.toFixed(2);
+  // Solo calcular engagement con likes/comments si es YouTube
+  if (isYouTube(deliverable.PlataformaTalento)) {
+    const likes = parseInt(deliverable.Likes) || 0;
+    const comments = parseInt(deliverable.Comments) || 0;
+    const engagement = ((likes + comments) / views) * 100;
+    return engagement.toFixed(2);
+  }
+  
+  // Para otras plataformas, retornar 0
+  return '0.00';
 };
 
 const getPlatformIcon = (url) => {
@@ -278,6 +288,7 @@ const getPlatformIcon = (url) => {
 };
 
 const calculateLikeRate = (deliverable) => {
+  if (!isYouTube(deliverable.PlataformaTalento)) return '-';
   const views = parseInt(deliverable.Views) || 0;
   const likes = parseInt(deliverable.Likes) || 0;
   if (views === 0) return '0.00';
@@ -285,6 +296,7 @@ const calculateLikeRate = (deliverable) => {
 };
 
 const calculateCommentRate = (deliverable) => {
+  if (!isYouTube(deliverable.PlataformaTalento)) return '-';
   const views = parseInt(deliverable.Views) || 0;
   const comments = parseInt(deliverable.Comments) || 0;
   if (views === 0) return '0.00';

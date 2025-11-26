@@ -48,7 +48,7 @@
         <select v-model="sortBy" @change="handleSort" class="select-modern">
           <option value="ftds">FTDs</option>
           <option value="progress">% Target</option>
-          <option value="cpa">CPA</option>
+          <option value="tba">TBA</option>
           <option value="views">Views</option>
           <option value="fecha">Date</option>
         </select>
@@ -86,7 +86,7 @@
             <th>Target</th>
             <th>FTDs</th>
             <th class="text-end">% Target</th>
-            <th class="text-end">CPA</th>
+            <th class="text-end">TBA</th>
             <th class="text-end">Views</th>
             <th class="text-end">Avg Viewers</th>
             <th class="text-end">Peak Viewers</th>
@@ -120,7 +120,7 @@
               </span>
             </td>
             <td class="text-end">
-              <span class="metric-value metric-cpa">${{ calculateCPA(campaign) }}</span>
+              <span class="metric-value metric-tba">${{ calculateTBA(campaign) }}</span>
             </td>
             <td class="text-end">
               <span class="metric-value metric-views">{{ formatNumber(campaign.Views || 0) }}</span>
@@ -254,7 +254,7 @@ const sortedCampaigns = computed(() => {
         const bObtained = parseInt(b.FTDObtenido) || 0;
         bValue = bTarget > 0 ? (bObtained / bTarget) * 100 : 0;
         break;
-      case 'cpa':
+      case 'tba':
         const aFtds = parseInt(a.FTDObtenido) || 0;
         const aBudget = (parseInt(a.FTDs) || 0) * 50;
         aValue = aFtds > 0 ? aBudget / aFtds : 0;
@@ -359,7 +359,7 @@ const getProgressClass = (campaign) => {
   return 'progress-red';
 };
 
-const calculateCPA = (campaign) => {
+const calculateTBA = (campaign) => {
   const ftds = parseInt(campaign.FTDObtenido) || 0;
   // Asumiendo un presupuesto estimado basado en FTDs meta
   const estimatedBudget = (parseInt(campaign.FTDs) || 0) * 50; // $50 por FTD meta
@@ -367,15 +367,25 @@ const calculateCPA = (campaign) => {
   return Number((estimatedBudget / ftds).toFixed(2));
 };
 
+const isYouTube = (url) => {
+  return url && url.includes('youtube');
+};
+
 const calculateEngagement = (campaign) => {
   const views = parseInt(campaign.Views) || 0;
-  const likes = parseInt(campaign.Likes) || 0;
-  const comments = parseInt(campaign.Comments) || 0;
   
   if (views === 0) return '0.00';
   
-  const engagement = ((likes + comments) / views) * 100;
-  return engagement.toFixed(2);
+  // Solo calcular engagement con likes/comments si es YouTube
+  if (isYouTube(campaign.PlataformaTalento)) {
+    const likes = parseInt(campaign.Likes) || 0;
+    const comments = parseInt(campaign.Comments) || 0;
+    const engagement = ((likes + comments) / views) * 100;
+    return engagement.toFixed(2);
+  }
+  
+  // Para otras plataformas, retornar 0
+  return '0.00';
 };
 
 const truncateUrl = (url) => {
@@ -752,7 +762,7 @@ const handleViewCampaign = (campaign) => {
   font-weight: 600;
 }
 
-.metric-cpa {
+.metric-tba {
   color: var(--accent-pink);
   font-weight: 600;
 }

@@ -6,11 +6,13 @@
         <slot name="icon"></slot>
       </div>
     </div>
-    <div class="kpi-value" :class="valueClass">
-      {{ formattedValue }}
-    </div>
-    <div class="kpi-subtitle" v-if="subtitle">
-      {{ subtitle }}
+    <div class="kpi-value-container">
+      <div class="kpi-value" :class="valueClass">
+        {{ formattedValue }}
+      </div>
+      <div class="kpi-subtitle">
+        {{ subtitle }}
+      </div>
     </div>
   </div>
 </template>
@@ -47,10 +49,23 @@ const iconClass = computed(() => `icon-${props.color}`);
 const valueClass = computed(() => `value-${props.color}`);
 
 const formattedValue = computed(() => {
-  const numValue = typeof props.value === 'string' ? parseFloat(props.value) : props.value;
+  // Si el valor es un string y no es un número válido, retornarlo tal cual
+  if (typeof props.value === 'string') {
+    const numValue = parseFloat(props.value);
+    if (isNaN(numValue)) {
+      return props.value; // Retornar el string original (ej: 'N/A', nombre de talento)
+    }
+    // Si es un número válido como string, continuar con el formateo
+    return formatNumber(numValue);
+  }
   
-  if (isNaN(numValue)) return '0';
+  // Si es un número, formatearlo
+  return formatNumber(props.value);
+});
 
+const formatNumber = (numValue) => {
+  if (isNaN(numValue)) return '0';
+  
   switch (props.format) {
     case 'percentage':
       return `${numValue.toLocaleString('en-US')}%`;
@@ -62,7 +77,7 @@ const formattedValue = computed(() => {
     default:
       return numValue.toLocaleString('en-US');
   }
-});
+};
 </script>
 
 <style scoped>
@@ -70,7 +85,6 @@ const formattedValue = computed(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
 .kpi-header {
@@ -119,11 +133,17 @@ const formattedValue = computed(() => {
   color: var(--accent-blue);
 }
 
+.kpi-value-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 3.5rem;
+  justify-content: flex-end;
+}
+
 .kpi-value {
   font-size: 2.0rem;
   font-weight: 700;
   line-height: 1;
-  margin-bottom: var(--spacing-sm);
   font-variant-numeric: tabular-nums;
 }
 
