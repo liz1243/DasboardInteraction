@@ -6,13 +6,13 @@
     
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
-      <button @click="$router.push('/')" class="btn-back">Volver al Dashboard</button>
+      <button @click="handleBackToDashboard" class="btn-back">Volver al Dashboard</button>
     </div>
     
     <div v-else-if="clientName" class="client-content">
       <!-- Header con nombre del cliente -->
       <div class="client-header">
-        <button @click="$router.push('/')" class="btn-back">
+        <button @click="handleBackToDashboard" class="btn-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -143,7 +143,7 @@
     
     <div v-else class="not-found-state">
       <p>Client not found</p>
-      <button @click="$router.push('/')" class="btn-back">Back to Dashboard</button>
+      <button @click="handleBackToDashboard" class="btn-back">Back to Dashboard</button>
     </div>
 
     <!-- Botón Scroll to Top -->
@@ -172,6 +172,7 @@ import ChartFTDsTimeline from '@/components/ChartFTDsTimeline.vue';
 import CampaignDetails from '@/components/CampaignDetails.vue';
 import DeliverableDetails from '@/components/DeliverableDetails.vue';
 import { decodeRouteParam } from '@/utils/routeHelpers.js';
+import { fetchCampaigns } from '@/services/apiService.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -450,6 +451,77 @@ const getRelatedDeliverablesForSelected = () => {
     c.NombreTalento === selectedDeliverable.value.NombreTalento &&
     c.NombreCliente === selectedDeliverable.value.NombreCliente
   );
+};
+
+// Función para normalizar datos (similar a DashboardView)
+const normalizeCampaignData = (data) => {
+  return data.map(campaign => {
+    const normalized = { ...campaign };
+    
+    // Validar y normalizar entregables_fecha
+    if (normalized.entregables_fecha) {
+      const dateStr = normalized.entregables_fecha.toString();
+      const dateObj = new Date(dateStr);
+      if (!isNaN(dateObj.getTime())) {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        normalized.entregables_fecha = `${year}-${month}-${day}`;
+      }
+    }
+    
+    // Si no tiene Views, usar Peak Viewers como aproximación
+    if (normalized.Views === undefined && normalized['Peak Viewers']) {
+      normalized.Views = normalized['Peak Viewers'];
+    } else if (normalized.Views === undefined) {
+      normalized.Views = 0;
+    }
+    
+    // Solo usar valores reales del JSON, si no existen poner 0
+    if (normalized.Likes === undefined) {
+      normalized.Likes = 0;
+    }
+    
+    if (normalized.Comments === undefined) {
+      normalized.Comments = 0;
+    }
+    
+    return normalized;
+  });
+};
+
+// Manejar navegación de vuelta al dashboard y recargar datos
+const handleBackToDashboard = async () => {
+  try {
+    dashboardStore.setLoading(true);
+    
+    // Recargar todos los datos desde la API
+    let rawData;
+    try {
+      rawData = await fetchCampaigns();
+    } catch (apiError) {
+      console.warn('Error al cargar desde API, usando JSON local como fallback:', apiError);
+      // Fallback a JSON local si la API falla
+      const campaignsData = await import('@/data/campaigns.json');
+      rawData = campaignsData.default || campaignsData;
+    }
+    
+    // Normalizar y guardar datos
+    const normalizedData = normalizeCampaignData(rawData);
+    dashboardStore.setCampaigns(normalizedData);
+    
+    // Limpiar filtros
+    dashboardStore.resetFilters();
+    
+    // Navegar al dashboard
+    router.push('/');
+  } catch (error) {
+    console.error('Error al recargar datos:', error);
+    // Navegar de todas formas
+    router.push('/');
+  } finally {
+    dashboardStore.setLoading(false);
+  }
 };
 
 // Cargar cuando se monta el componente
