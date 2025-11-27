@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { 
   filterCampaigns,
-  getAvailableTalents
+  getAvailableTalents,
+  getPlatformFromUrl
 } from '@/utils/kpiCalculations.js';
 
 export const useDashboardStore = defineStore('dashboard', () => {
@@ -13,6 +14,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   
   // Filtros
   const filters = ref({
+    source: 'all', // Plataforma: youtube, kick, twitch, all
     client: 'all',
     talent: 'all',
     searchQuery: ''
@@ -23,18 +25,32 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return filterCampaigns(campaigns.value, filters.value);
   });
 
+  // Filtrar campañas por plataforma seleccionada
+  const campaignsBySource = computed(() => {
+    if (filters.value.source === 'all') return campaigns.value;
+    return campaigns.value.filter(campaign => {
+      const platform = getPlatformFromUrl(campaign.PlataformaTalento);
+      return platform === filters.value.source;
+    });
+  });
+
   const availableTalents = computed(() => {
-    // Filtrar talentos por cliente seleccionado si aplica
+    // Primero filtrar por plataforma (source)
+    let filteredCampaigns = campaignsBySource.value;
+    
+    // Luego filtrar por cliente seleccionado si aplica
     const selectedClient = filters.value.client;
-    const source = selectedClient && selectedClient !== 'all'
-      ? campaigns.value.filter(c => c.NombreCliente === selectedClient)
-      : campaigns.value;
-    return getAvailableTalents(source);
+    if (selectedClient && selectedClient !== 'all') {
+      filteredCampaigns = filteredCampaigns.filter(c => c.NombreCliente === selectedClient);
+    }
+    
+    return getAvailableTalents(filteredCampaigns);
   });
 
   const availableClients = computed(() => {
+    // Filtrar clientes por plataforma seleccionada
     const clientsSet = new Set();
-    campaigns.value.forEach(campaign => {
+    campaignsBySource.value.forEach(campaign => {
       if (campaign.NombreCliente) {
         clientsSet.add(campaign.NombreCliente);
       }
@@ -56,6 +72,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   function resetFilters() {
     filters.value = {
+      source: 'all',
       client: 'all',
       talent: 'all',
       searchQuery: ''

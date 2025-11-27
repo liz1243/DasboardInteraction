@@ -31,18 +31,36 @@
         <span class="kpi-label">Views</span>
         <span class="kpi-value metric-cyan">{{ formatNumber(deliverable.Views || 0) }}</span>
       </div>
-      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="kpi-card">
-        <span class="kpi-label">Likes</span>
-        <span class="kpi-value metric-pink">{{ formatNumber(deliverable.Likes || 0) }}</span>
-      </div>
-      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="kpi-card">
-        <span class="kpi-label">Comments</span>
-        <span class="kpi-value metric-blue">{{ formatNumber(deliverable.Comments || 0) }}</span>
-      </div>
-      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="kpi-card">
-        <span class="kpi-label">Engagement Rate</span>
-        <span class="kpi-value metric-green">{{ calculateEngagement(deliverable) }}%</span>
-      </div>
+      <!-- Métricas de YouTube (Likes, Comments, Engagement) -->
+      <template v-if="showYouTubeMetrics">
+        <div class="kpi-card">
+          <span class="kpi-label">Likes</span>
+          <span class="kpi-value metric-pink">{{ formatNumber(deliverable.Likes || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Comments</span>
+          <span class="kpi-value metric-blue">{{ formatNumber(deliverable.Comments || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Engagement Rate</span>
+          <span class="kpi-value metric-green">{{ calculateEngagement(deliverable) }}%</span>
+        </div>
+      </template>
+      <!-- Métricas de Streaming (Avg Viewers, Peak Viewers, Minutes Watched) -->
+      <template v-if="showStreamingMetrics">
+        <div class="kpi-card">
+          <span class="kpi-label">Avg Viewers</span>
+          <span class="kpi-value metric-pink">{{ formatNumber(deliverable['Avg Viewers'] || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Peak Viewers</span>
+          <span class="kpi-value metric-blue">{{ formatNumber(deliverable['Peak Viewers'] || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Minutes Watched</span>
+          <span class="kpi-value metric-green">{{ formatNumber(deliverable['Minutes Watched'] || 0) }}</span>
+        </div>
+      </template>
       <div class="kpi-card">
         <span class="kpi-label">Associated FTDs</span>
         <span class="kpi-value metric-purple">{{ formatNumber(deliverable.FTDObtenido || 0) }}</span>
@@ -94,31 +112,33 @@
 
     <!-- Engagement Breakdown -->
     <div class="engagement-breakdown">
-      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="breakdown-card">
-        <div class="breakdown-header">
-          <span class="breakdown-label">Like Rate</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-pink">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
+      <template v-if="showYouTubeMetrics">
+        <div class="breakdown-card">
+          <div class="breakdown-header">
+            <span class="breakdown-label">Like Rate</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-pink">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </div>
+          <p class="breakdown-value">{{ calculateLikeRate(deliverable) }}%</p>
+          <p class="breakdown-subtitle">
+            {{ formatNumber(deliverable.Likes || 0) }} of {{ formatNumber(deliverable.Views || 0) }} views
+          </p>
         </div>
-        <p class="breakdown-value">{{ calculateLikeRate(deliverable) }}%</p>
-        <p class="breakdown-subtitle">
-          {{ formatNumber(deliverable.Likes || 0) }} of {{ formatNumber(deliverable.Views || 0) }} views
-        </p>
-      </div>
 
-      <div v-if="isYouTube(deliverable.PlataformaTalento)" class="breakdown-card">
-        <div class="breakdown-header">
-          <span class="breakdown-label">Comment Rate</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-blue">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
+        <div class="breakdown-card">
+          <div class="breakdown-header">
+            <span class="breakdown-label">Comment Rate</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-blue">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <p class="breakdown-value">{{ calculateCommentRate(deliverable) }}%</p>
+          <p class="breakdown-subtitle">
+            {{ formatNumber(deliverable.Comments || 0) }} comments
+          </p>
         </div>
-        <p class="breakdown-value">{{ calculateCommentRate(deliverable) }}%</p>
-        <p class="breakdown-subtitle">
-          {{ formatNumber(deliverable.Comments || 0) }} comments
-        </p>
-      </div>
+      </template>
 
       <div class="breakdown-card">
         <div class="breakdown-header">
@@ -174,6 +194,10 @@ const props = defineProps({
   relatedDeliverables: {
     type: Array,
     default: () => []
+  },
+  source: {
+    type: String,
+    default: null
   }
 });
 
@@ -256,9 +280,36 @@ const extractPlatform = (url) => {
   return 'Otra plataforma';
 };
 
+// Determinar si es YouTube basándose en source o PlataformaTalento
 const isYouTube = (url) => {
+  // Si hay source en la ruta, usarlo como fuente de verdad
+  if (props.source) {
+    return props.source.toLowerCase() === 'youtube';
+  }
+  // Fallback a PlataformaTalento si no hay source
   return url && url.includes('youtube');
 };
+
+// Determinar si es plataforma de streaming (kick o twitch)
+const isStreamingPlatform = computed(() => {
+  if (props.source) {
+    const sourceLower = props.source.toLowerCase();
+    return sourceLower === 'kick' || sourceLower === 'twitch';
+  }
+  // Fallback a PlataformaTalento
+  const url = props.deliverable.PlataformaTalento || '';
+  return url.includes('kick.com') || url.includes('twitch');
+});
+
+// Determinar si mostrar métricas de YouTube
+const showYouTubeMetrics = computed(() => {
+  return isYouTube(props.deliverable.PlataformaTalento);
+});
+
+// Determinar si mostrar métricas de streaming
+const showStreamingMetrics = computed(() => {
+  return isStreamingPlatform.value || !showYouTubeMetrics.value;
+});
 
 const calculateEngagement = (deliverable) => {
   const views = parseInt(deliverable.Views) || 0;
@@ -266,7 +317,7 @@ const calculateEngagement = (deliverable) => {
   if (views === 0) return '0.00';
   
   // Solo calcular engagement con likes/comments si es YouTube
-  if (isYouTube(deliverable.PlataformaTalento)) {
+  if (showYouTubeMetrics.value) {
     const likes = parseInt(deliverable.Likes) || 0;
     const comments = parseInt(deliverable.Comments) || 0;
     const engagement = ((likes + comments) / views) * 100;
@@ -288,7 +339,7 @@ const getPlatformIcon = (url) => {
 };
 
 const calculateLikeRate = (deliverable) => {
-  if (!isYouTube(deliverable.PlataformaTalento)) return '-';
+  if (!showYouTubeMetrics.value) return '-';
   const views = parseInt(deliverable.Views) || 0;
   const likes = parseInt(deliverable.Likes) || 0;
   if (views === 0) return '0.00';
@@ -296,7 +347,7 @@ const calculateLikeRate = (deliverable) => {
 };
 
 const calculateCommentRate = (deliverable) => {
-  if (!isYouTube(deliverable.PlataformaTalento)) return '-';
+  if (!showYouTubeMetrics.value) return '-';
   const views = parseInt(deliverable.Views) || 0;
   const comments = parseInt(deliverable.Comments) || 0;
   if (views === 0) return '0.00';

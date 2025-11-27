@@ -85,9 +85,9 @@
               <th>Views</th>
               <th v-if="hasYouTubeCampaigns">Likes</th>
               <th v-if="hasYouTubeCampaigns">Comments</th>
-              <th>Avg Viewers</th>
-              <th>Peak Viewers</th>
-              <th>Minutes</th>
+              <th v-if="!hasYouTubeCampaigns">Avg Viewers</th>
+              <th v-if="!hasYouTubeCampaigns">Peak Viewers</th>
+              <th v-if="!hasYouTubeCampaigns">Minutes</th>
               <th></th>
             </tr>
           </thead>
@@ -110,9 +110,9 @@
               <td class="text-end">{{ formatNumber(item.Views || 0) }}</td>
               <td v-if="hasYouTubeCampaigns" class="text-end">{{ isYouTube(item.PlataformaTalento) ? formatNumber(item.Likes || 0) : '-' }}</td>
               <td v-if="hasYouTubeCampaigns" class="text-end">{{ isYouTube(item.PlataformaTalento) ? formatNumber(item.Comments || 0) : '-' }}</td>
-              <td class="text-end">{{ formatNumber(item['Avg Viewers'] || 0) }}</td>
-              <td class="text-end">{{ formatNumber(item['Peak Viewers'] || 0) }}</td>
-              <td class="text-end">{{ formatNumber(item['Minutes Watched'] || 0) }}</td>
+              <td v-if="!hasYouTubeCampaigns" class="text-end">{{ formatNumber(item['Avg Viewers'] || 0) }}</td>
+              <td v-if="!hasYouTubeCampaigns" class="text-end">{{ formatNumber(item['Peak Viewers'] || 0) }}</td>
+              <td v-if="!hasYouTubeCampaigns" class="text-end">{{ formatNumber(item['Minutes Watched'] || 0) }}</td>
               <td>
                 <button 
                   @click="handleViewDeliverable(item)"
@@ -189,6 +189,10 @@ const props = defineProps({
   campaign: {
     type: Object,
     required: true
+  },
+  source: {
+    type: String,
+    default: null
   }
 });
 
@@ -215,7 +219,13 @@ const extractPlatform = (url) => {
   return 'Otra plataforma';
 };
 
+// Determinar si es YouTube basándose en source o PlataformaTalento
 const isYouTube = (url) => {
+  // Si hay source en la ruta, usarlo como fuente de verdad
+  if (props.source) {
+    return props.source.toLowerCase() === 'youtube';
+  }
+  // Fallback a PlataformaTalento si no hay source
   return url && url.includes('youtube');
 };
 
@@ -229,6 +239,11 @@ const relatedCampaigns = computed(() => {
 
 // Verificar si hay alguna campaña de YouTube
 const hasYouTubeCampaigns = computed(() => {
+  // Si hay source, usarlo directamente
+  if (props.source) {
+    return props.source.toLowerCase() === 'youtube';
+  }
+  // Fallback a verificar PlataformaTalento
   return relatedCampaigns.value.some(c => isYouTube(c.PlataformaTalento));
 });
 
@@ -340,7 +355,7 @@ const calculateEngagement = (campaign) => {
   if (views === 0) return '0.00';
   
   // Solo calcular engagement con likes/comments si es YouTube
-  if (isYouTube(campaign.PlataformaTalento)) {
+  if (hasYouTubeCampaigns.value || isYouTube(campaign.PlataformaTalento)) {
     const likes = parseInt(campaign.Likes) || 0;
     const comments = parseInt(campaign.Comments) || 0;
     const engagement = ((likes + comments) / views) * 100;

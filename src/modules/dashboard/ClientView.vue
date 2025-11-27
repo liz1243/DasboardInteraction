@@ -126,6 +126,7 @@
       <div v-if="selectedCampaign" class="campaign-details-section">
         <CampaignDetails 
           :campaign="selectedCampaign" 
+          :source="route.params.source"
           @close="selectedCampaign = null"
           @view-deliverable="handleViewDeliverable"
         />
@@ -136,6 +137,7 @@
         <DeliverableDetails 
           :deliverable="selectedDeliverable" 
           :related-deliverables="getRelatedDeliverablesForSelected()"
+          :source="route.params.source"
           @close="selectedDeliverable = null" 
         />
       </div>
@@ -278,6 +280,7 @@ const loadClient = async () => {
   // Leer parámetros de ruta de la URL
   const clienteParam = route.params.cliente;
   const talentoParam = route.params.talento;
+  const sourceParam = route.params.source;
   
   if (!clienteParam) {
     error.value = 'Parámetro "cliente" no proporcionado en la URL';
@@ -292,6 +295,7 @@ const loadClient = async () => {
     // Decodificar el nombre del cliente y talento (pueden venir codificados)
     const decodedClientName = decodeRouteParam(clienteParam);
     const decodedTalentName = talentoParam ? decodeRouteParam(talentoParam) : null;
+    const decodedSource = sourceParam ? decodeRouteParam(sourceParam) : null;
     
     // Guardar el nombre del cliente en el ref
     clientName.value = decodedClientName;
@@ -299,8 +303,8 @@ const loadClient = async () => {
     try {
       const { fetchCampaignsByClient } = await import('@/services/apiService.js');
       
-      // Cargar datos filtrados por cliente (y talento si está presente) desde la API
-      const filteredData = await fetchCampaignsByClient(decodedClientName, decodedTalentName);
+      // Cargar datos filtrados por cliente (y talento y source si están presentes) desde la API
+      const filteredData = await fetchCampaignsByClient(decodedClientName, decodedTalentName, decodedSource);
       
       // Normalizar datos
       const normalizedData = filteredData.map(campaign => {
@@ -346,7 +350,7 @@ const loadClient = async () => {
         dashboardStore.setFilters({ talent: decodedTalentName });
       }
       
-      console.log(`✅ Datos del cliente "${decodedClientName}"${decodedTalentName ? ` y talento "${decodedTalentName}"` : ''} cargados: ${normalizedData.length} entregables`);
+      console.log(`✅ Datos del cliente "${decodedClientName}"${decodedTalentName ? ` y talento "${decodedTalentName}"` : ''}${decodedSource ? ` y source "${decodedSource}"` : ''} cargados: ${normalizedData.length} entregables`);
     } catch (apiError) {
       console.warn('Error al cargar datos filtrados desde API, usando fallback:', apiError);
       
@@ -534,8 +538,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 
-// Recargar cuando cambian los parámetros de ruta (cliente o talento)
-watch(() => [route.params.cliente, route.params.talento], () => {
+// Recargar cuando cambian los parámetros de ruta (cliente, talento o source)
+watch(() => [route.params.cliente, route.params.talento, route.params.source], () => {
   loadClient();
   selectedCampaign.value = null;
   selectedDeliverable.value = null;

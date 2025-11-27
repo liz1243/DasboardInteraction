@@ -4,7 +4,7 @@
  */
 
 // URL de la API de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHW_U5B6jJA9a6onFImlhWdc1XIUSsGu5qe4Nd126woWpAwW7YwCO8Bqx0N_mfB1CLEQ/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzix8yWPEnzY6z37AUPoCA1L5pc3Gm5Xb_VRp2yEIKnKbBFH-6EYvGUrQJ1qCiHHqOAJA/exec';
 
 /**
  * Transforma los datos de la API (formato anidado) al formato plano esperado
@@ -76,7 +76,7 @@ const transformApiData = (apiResponse) => {
  */
 const buildApiUrl = (params = {}) => {
   // Si no hay parámetros, devolver la URL base
-  if (!params.cliente && !params.talento) {
+  if (!params.cliente && !params.talento && !params.source) {
     return GOOGLE_APPS_SCRIPT_URL;
   }
   
@@ -87,6 +87,9 @@ const buildApiUrl = (params = {}) => {
   }
   if (params.talento) {
     url.searchParams.append('talento', params.talento);
+  }
+  if (params.source) {
+    url.searchParams.append('source', params.source);
   }
   
   return url.toString();
@@ -160,12 +163,15 @@ export const fetchCampaignById = async (campaignId) => {
 };
 
 // Función para obtener campañas por cliente (usa parámetros de la API)
-export const fetchCampaignsByClient = async (clientName, talentName = null) => {
+export const fetchCampaignsByClient = async (clientName, talentName = null, source = null) => {
   try {
     // Usar los parámetros de la API para filtrar directamente en el servidor
     const filters = { cliente: clientName };
     if (talentName) {
       filters.talento = talentName;
+    }
+    if (source) {
+      filters.source = source;
     }
     
     const filtered = await fetchCampaigns(filters);

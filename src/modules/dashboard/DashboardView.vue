@@ -112,6 +112,7 @@
     <div v-if="selectedCampaign" class="campaign-details-section">
       <CampaignDetails 
         :campaign="selectedCampaign" 
+        :source="getSourceFromCampaign(selectedCampaign)"
         @close="selectedCampaign = null"
         @view-deliverable="handleViewDeliverable"
       />
@@ -122,6 +123,7 @@
       <DeliverableDetails 
         :deliverable="selectedDeliverable" 
         :related-deliverables="getRelatedDeliverablesForSelected()"
+        :source="getSourceFromDeliverable(selectedDeliverable)"
         @close="selectedDeliverable = null" 
       />
     </div>
@@ -360,6 +362,25 @@ const getRelatedDeliverablesForSelected = () => {
     c.NombreTalento === selectedDeliverable.value.NombreTalento &&
     c.NombreCliente === selectedDeliverable.value.NombreCliente
   );
+};
+
+// Determinar source basándose en la plataforma del entregable/campaña
+const getSourceFromDeliverable = (deliverable) => {
+  if (!deliverable || !deliverable.PlataformaTalento) return null;
+  const platform = deliverable.PlataformaTalento.toLowerCase();
+  if (platform.includes('youtube')) return 'youtube';
+  if (platform.includes('kick.com') || platform.includes('kick')) return 'kick';
+  if (platform.includes('twitch')) return 'twitch';
+  return null;
+};
+
+const getSourceFromCampaign = (campaign) => {
+  if (!campaign || !campaign.PlataformaTalento) return null;
+  const platform = campaign.PlataformaTalento.toLowerCase();
+  if (platform.includes('youtube')) return 'youtube';
+  if (platform.includes('kick.com') || platform.includes('kick')) return 'kick';
+  if (platform.includes('twitch')) return 'twitch';
+  return null;
 };
 </script>
 

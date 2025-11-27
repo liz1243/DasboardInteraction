@@ -2,6 +2,57 @@
   <div class="filters-row" v-if="hasData">
     <div class="filters-row-container">
       <div class="filters-buttons">
+        <!-- Botón Plataforma (Source) -->
+        <div class="filter-button-group">
+          <button 
+            @click="toggleDropdown('source')"
+            :class="['filter-btn', { 'filter-btn-active': localFilters.source !== 'all' }]"
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span>Platform</span>
+            <span v-if="localFilters.source !== 'all'" class="filter-badge">
+              {{ getPlatformLabel(localFilters.source) }}
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div v-if="activeDropdown === 'source'" class="dropdown-menu">
+            <button 
+              @click="selectFilter('source', 'all')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'all' }]"
+              type="button"
+            >
+              All platforms
+            </button>
+            <button
+              @click="selectFilter('source', 'youtube')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'youtube' }]"
+              type="button"
+            >
+              YouTube
+            </button>
+            <button
+              @click="selectFilter('source', 'kick')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'kick' }]"
+              type="button"
+            >
+              Kick
+            </button>
+            <button
+              @click="selectFilter('source', 'twitch')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'twitch' }]"
+              type="button"
+            >
+              Twitch
+            </button>
+          </div>
+        </div>
+
         <!-- Botón Cliente -->
         <div class="filter-button-group">
           <button 
@@ -133,23 +184,43 @@ const hasData = computed(() => {
 });
 
 const hasActiveFilters = computed(() => {
-  return localFilters.value.client !== 'all' ||
+  return localFilters.value.source !== 'all' ||
+         localFilters.value.client !== 'all' ||
          localFilters.value.talent !== 'all';
 });
+
+const getPlatformLabel = (source) => {
+  const labels = {
+    'youtube': 'YouTube',
+    'kick': 'Kick',
+    'twitch': 'Twitch'
+  };
+  return labels[source] || source;
+};
 
 watch(() => props.filters, (newFilters) => {
   localFilters.value = { ...newFilters };
 }, { deep: true });
 
-// Si cambia el cliente (y por ende la lista de talentos), resetear talento si no es válido
+// Si cambia la plataforma, cliente o la lista de talentos, resetear filtros si no son válidos
 watch(
-  () => [props.availableTalents, localFilters.value.client],
+  () => [props.availableTalents, localFilters.value.client, localFilters.value.source],
   (newVal, oldVal) => {
-    // Si cambió el cliente o la lista de talentos disponibles
+    // Si cambió la plataforma, el cliente o la lista de talentos disponibles
+    const sourceChanged = oldVal && oldVal[2] !== newVal[2];
     const clientChanged = oldVal && oldVal[1] !== newVal[1];
     const talentsChanged = oldVal && oldVal[0] !== newVal[0];
     
-    if (clientChanged || talentsChanged) {
+    if (sourceChanged) {
+      // Si cambió la plataforma, resetear cliente y talento
+      if (localFilters.value.client !== 'all') {
+        localFilters.value.client = 'all';
+      }
+      if (localFilters.value.talent !== 'all') {
+        localFilters.value.talent = 'all';
+      }
+      updateFilters();
+    } else if (clientChanged || talentsChanged) {
       // Si hay un talento seleccionado que no está en la nueva lista, resetearlo
       if (
         localFilters.value.talent !== 'all' &&
@@ -176,8 +247,15 @@ const dashboardStore = useDashboardStore();
 const selectFilter = async (key, value) => {
   localFilters.value[key] = value;
   
+  // Si se selecciona una plataforma, resetear cliente y talento
+  if (key === 'source') {
+    localFilters.value.client = 'all';
+    localFilters.value.talent = 'all';
+    updateFilters();
+    await nextTick();
+  }
   // Si se selecciona un cliente, resetear el talento si no es válido para ese cliente
-  if (key === 'client') {
+  else if (key === 'client') {
     // Actualizar filtros primero para que availableTalents se actualice
     updateFilters();
     
@@ -204,6 +282,7 @@ const updateFilters = () => {
 const clearAllFilters = () => {
   localFilters.value = {
     ...localFilters.value,
+    source: 'all',
     client: 'all',
     talent: 'all'
   };

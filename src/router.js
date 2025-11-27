@@ -9,7 +9,7 @@ const routes = [
     component: DashboardView
   },
   {
-    path: '/client/:cliente/:talento?',
+    path: '/client/:cliente/:talento?/:source?',
     name: 'client',
     component: ClientView,
     props: true

@@ -1,11 +1,31 @@
 
 /**
+ * Helper para detectar plataforma desde PlataformaTalento
+ */
+export function getPlatformFromUrl(url) {
+  if (!url) return null;
+  const urlLower = url.toLowerCase();
+  if (urlLower.includes('youtube')) return 'youtube';
+  if (urlLower.includes('kick.com') || urlLower.includes('kick')) return 'kick';
+  if (urlLower.includes('twitch')) return 'twitch';
+  return null;
+}
+
+/**
  * Filtra campañas según criterios
  */
 export function filterCampaigns(campaigns, filters) {
   if (!campaigns || campaigns.length === 0) return [];
   
   let filtered = [...campaigns];
+
+  // Filtro por Plataforma (Source)
+  if (filters.source && filters.source !== 'all') {
+    filtered = filtered.filter(campaign => {
+      const platform = getPlatformFromUrl(campaign.PlataformaTalento);
+      return platform === filters.source;
+    });
+  }
 
   // Filtro por Talento
   if (filters.talent && filters.talent !== 'all') {
