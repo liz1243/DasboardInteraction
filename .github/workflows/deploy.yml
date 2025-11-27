@@ -1,0 +1,161 @@
+name: Deploy React App - Vite (dist)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: |
+        echo "📦 Installing dependencies..."
+        npm ci
+        echo "✅ Dependencies installed"
+      
+    - name: Build application
+      run: |
+        echo "🔨 Building React app..."
+        npm run build
+        echo "✅ Build completed"
+      env:
+        CI: false
+        # Agrega aquí tus variables de entorno de build
+        # VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        # VITE_APP_TITLE: "Mi App"
+    
+    - name: Verify build output
+      run: |
+        echo "🔍 Verifying build output..."
+        
+        # Verificar que existe el directorio dist
+        if [ ! -d "dist" ]; then
+          echo "❌ ERROR: dist directory does not exist"
+          echo "Current directory contents:"
+          ls -la
+          exit 1
+        fi
+        
+        # Verificar que no está vacío
+        if [ -z "$(ls -A dist)" ]; then
+          echo "❌ ERROR: dist directory is empty"
+          exit 1
+        fi
+        
+        # Mostrar información
+        echo "✅ dist directory verified"
+        echo ""
+        echo "📊 Build statistics:"
+        echo "  • Files: $(find dist -type f | wc -l)"
+        echo "  • Size: $(du -sh dist | cut -f1)"
+        echo ""
+        echo "📁 dist contents:"
+        ls -lah dist/ | head -20
+        
+        # Verificar index.html
+        if [ ! -f "dist/index.html" ]; then
+          echo "⚠️  WARNING: index.html not found in dist/"
+        else
+          echo "✅ index.html found"
+        fi
+    
+    - name: Create deployment package
+      run: |
+        echo "📦 Creating deployment package..."
+        cd dist
+        tar -czf ../deploy.tar.gz .
+        cd ..
+        echo "✅ Package created"
+        ls -lh deploy.tar.gz
+    
+    - name: Deploy package to VPS
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT }}
+        source: "deploy.tar.gz"
+        target: "/tmp/"
+    
+    - name: Extract and deploy on VPS
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT }}
+        script: |
+          set -e
+          
+          APP_NAME="${{ secrets.APP_NAME }}"
+          APP_DIR="/var/www/${APP_NAME}"
+          
+          echo "🚀 Starting deployment process..."
+          
+          # Verificar que llegó el archivo
+          if [ ! -f "/tmp/deploy.tar.gz" ]; then
+            echo "❌ ERROR: deploy.tar.gz not found"
+            exit 1
+          fi
+          
+          echo "✅ Deployment package received ($(du -h /tmp/deploy.tar.gz | cut -f1))"
+          
+          # Crear directorio de la app
+          sudo mkdir -p "$APP_DIR"
+          
+          # Limpiar directorio actual
+          echo "🧹 Cleaning old files..."
+          sudo rm -rf $APP_DIR/*
+          
+          # Extraer archivos nuevos
+          echo "📤 Extracting new files..."
+          sudo tar -xzf /tmp/deploy.tar.gz -C "$APP_DIR"
+          
+          # Limpiar archivo temporal
+          rm /tmp/deploy.tar.gz
+          
+          # Establecer permisos
+          echo "🔐 Setting permissions..."
+          sudo chown -R www-data:www-data "$APP_DIR"
+          sudo chmod -R 755 "$APP_DIR"
+          
+          # Verificar deployment
+          if [ ! -f "$APP_DIR/index.html" ]; then
+            echo "❌ ERROR: index.html not found after deployment"
+            echo "Directory contents:"
+            sudo ls -la "$APP_DIR"
+            exit 1
+          fi
+          
+          echo "✅ Files deployed successfully"
+          echo ""
+          echo "📊 Deployment statistics:"
+          echo "  • Files: $(sudo find $APP_DIR -type f | wc -l)"
+          echo "  • Size: $(sudo du -sh $APP_DIR | cut -f1)"
+          
+          # Recargar Apache
+          echo "🔄 Reloading web server..."
+          sudo systemctl reload apache2
+          
+          echo ""
+          echo "✅ Deployment completed successfully!"
+          echo "📅 Deployed at: $(date)"
+          echo "🔖 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
