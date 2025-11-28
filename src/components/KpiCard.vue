@@ -83,6 +83,7 @@ const formatNumber = (numValue) => {
 <style scoped>
 .kpi-card {
   height: 100%;
+  min-height: 120px;
   display: flex;
   flex-direction: column;
 }
@@ -91,59 +92,70 @@ const formatNumber = (numValue) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  min-height: 2.4em;
+  gap: var(--spacing-xs);
 }
 
 .kpi-title {
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   margin: 0;
+  line-height: 1.2;
+  max-height: 2.4em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .kpi-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
+/* Colores primarios: #fdc600, #bfbfbf, #ffd54d */
 .icon-cyan {
-  background: rgba(0, 234, 255, 0.1);
-  color: var(--accent-cyan);
+  background: rgba(253, 198, 0, 0.1); /* #fdc600 con opacidad */
+  color: #fdc600;
 }
 
 .icon-pink {
-  background: rgba(255, 123, 247, 0.1);
-  color: var(--accent-pink);
+  background: rgba(191, 191, 191, 0.1); /* #bfbfbf con opacidad */
+  color: #bfbfbf;
 }
 
 .icon-green {
-  background: rgba(77, 255, 145, 0.1);
-  color: var(--accent-green);
+  background: rgba(255, 213, 77, 0.1); /* #ffd54d con opacidad */
+  color: #ffd54d;
 }
 
 .icon-blue {
-  background: rgba(91, 141, 239, 0.1);
-  color: var(--accent-blue);
+  background: rgba(253, 198, 0, 0.1); /* #fdc600 con opacidad (repetir primer color) */
+  color: #fdc600;
 }
 
 .kpi-value-container {
   display: flex;
   flex-direction: column;
-  min-height: 3.5rem;
+  min-height: 2rem;
   justify-content: flex-end;
 }
 
 .kpi-value {
-  font-size: 2.0rem;
+  font-size: 1rem;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
@@ -171,6 +183,7 @@ const formatNumber = (numValue) => {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: var(--spacing-xs);
+  line-height: 1.3;
 }
 </style>
 

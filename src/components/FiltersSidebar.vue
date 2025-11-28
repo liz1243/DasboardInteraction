@@ -308,7 +308,6 @@ onUnmounted(() => {
 
 <style scoped>
 .filters-row {
-  margin-bottom: var(--spacing-xl);
   position: relative;
 }
 

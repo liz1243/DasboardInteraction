@@ -4,7 +4,7 @@
  */
 
 // URL de la API de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzix8yWPEnzY6z37AUPoCA1L5pc3Gm5Xb_VRp2yEIKnKbBFH-6EYvGUrQJ1qCiHHqOAJA/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzPxr2uq0tRQUKnIG3R_1cP-UdPghfa9v7fCrNK-G7_FbGdWleCFT23JUZwLzh1Ojizg/exec';
 
 /**
  * Transforma los datos de la API (formato anidado) al formato plano esperado
@@ -113,7 +113,6 @@ export const fetchCampaigns = async (filters = {}) => {
     // Transformar datos del formato API al formato esperado
     const transformedData = transformApiData(apiResponse);
     
-    console.log(`✅ Datos cargados: ${transformedData.length} campañas/entregables${filters.cliente ? ` (filtrado por cliente: ${filters.cliente})` : ''}`);
     return transformedData;
   } catch (error) {
     console.error('Error fetching campaigns:', error);

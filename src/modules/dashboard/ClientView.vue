@@ -105,10 +105,10 @@
         />
       </div>
 
-      <!-- Gráfico de Barras - Timeline FTDs vs Entregables -->
+      <!-- Gráfico de Series Temporales con Múltiples Métricas -->
       <div class="chart-section" v-if="filteredCampaigns.length > 0">
         <div class="chart-wrapper">
-          <ChartFTDsTimeline :data="filteredCampaigns" />
+          <ChartTimeSeriesMultiMetrics :data="filteredCampaigns" />
         </div>
       </div>
 
@@ -118,27 +118,6 @@
           :campaigns="filteredCampaigns"
           :search-query="dashboardStore.filters.searchQuery"
           @update-search="handleSearchUpdate"
-          @view-campaign="handleViewCampaign"
-        />
-      </div>
-
-      <!-- Panel de Detalles de Campaña (debajo de la tabla) -->
-      <div v-if="selectedCampaign" class="campaign-details-section">
-        <CampaignDetails 
-          :campaign="selectedCampaign" 
-          :source="route.params.source"
-          @close="selectedCampaign = null"
-          @view-deliverable="handleViewDeliverable"
-        />
-      </div>
-
-      <!-- Panel de Detalles de Entregable (debajo del panel de campaña) -->
-      <div v-if="selectedDeliverable" class="deliverable-details-section">
-        <DeliverableDetails 
-          :deliverable="selectedDeliverable" 
-          :related-deliverables="getRelatedDeliverablesForSelected()"
-          :source="route.params.source"
-          @close="selectedDeliverable = null" 
         />
       </div>
     </div>
@@ -170,9 +149,7 @@ import { useDashboardStore } from './dashboardStore.js';
 import KpiCard from '@/components/KpiCard.vue';
 import FiltersSidebar from '@/components/FiltersSidebar.vue';
 import TableCampaign from '@/components/TableCampaign.vue';
-import ChartFTDsTimeline from '@/components/ChartFTDsTimeline.vue';
-import CampaignDetails from '@/components/CampaignDetails.vue';
-import DeliverableDetails from '@/components/DeliverableDetails.vue';
+import ChartTimeSeriesMultiMetrics from '@/components/ChartTimeSeriesMultiMetrics.vue';
 import { decodeRouteParam } from '@/utils/routeHelpers.js';
 import { fetchCampaigns } from '@/services/apiService.js';
 
@@ -183,8 +160,6 @@ const dashboardStore = useDashboardStore();
 const clientName = ref(null);
 const loading = ref(true);
 const error = ref(null);
-const selectedCampaign = ref(null);
-const selectedDeliverable = ref(null);
 const showScrollTop = ref(false);
 
 // Detectar scroll para mostrar botón de ir arriba
@@ -350,7 +325,6 @@ const loadClient = async () => {
         dashboardStore.setFilters({ talent: decodedTalentName });
       }
       
-      console.log(`✅ Datos del cliente "${decodedClientName}"${decodedTalentName ? ` y talento "${decodedTalentName}"` : ''}${decodedSource ? ` y source "${decodedSource}"` : ''} cargados: ${normalizedData.length} entregables`);
     } catch (apiError) {
       console.warn('Error al cargar datos filtrados desde API, usando fallback:', apiError);
       
@@ -428,35 +402,6 @@ const handleSearchUpdate = (searchQuery) => {
   dashboardStore.setFilters({ searchQuery });
 };
 
-const handleViewCampaign = (campaign) => {
-  selectedCampaign.value = campaign;
-  selectedDeliverable.value = null;
-  setTimeout(() => {
-    const element = document.querySelector('.campaign-details-section');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, 100);
-};
-
-const handleViewDeliverable = (deliverable) => {
-  selectedDeliverable.value = deliverable;
-  setTimeout(() => {
-    const element = document.querySelector('.deliverable-details-section');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, 100);
-};
-
-const getRelatedDeliverablesForSelected = () => {
-  if (!selectedDeliverable.value || !selectedCampaign.value) return [];
-  return dashboardStore.campaigns.filter(c => 
-    c.NombreTalento === selectedDeliverable.value.NombreTalento &&
-    c.NombreCliente === selectedDeliverable.value.NombreCliente
-  );
-};
-
 // Función para normalizar datos (similar a DashboardView)
 const normalizeCampaignData = (data) => {
   return data.map(campaign => {
@@ -464,13 +409,26 @@ const normalizeCampaignData = (data) => {
     
     // Validar y normalizar entregables_fecha
     if (normalized.entregables_fecha) {
-      const dateStr = normalized.entregables_fecha.toString();
-      const dateObj = new Date(dateStr);
-      if (!isNaN(dateObj.getTime())) {
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        normalized.entregables_fecha = `${year}-${month}-${day}`;
+      const dateStr = normalized.entregables_fecha.toString().trim();
+
+      // Si ya está en formato YYYY-MM-DD (o YYYY-M-D), mantenerla tal cual (parsear manualmente)
+      const dateMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (dateMatch) {
+        // Normalizar a formato YYYY-MM-DD con ceros
+        const year = parseInt(dateMatch[1], 10);
+        const month = parseInt(dateMatch[2], 10);
+        const day = parseInt(dateMatch[3], 10);
+        normalized.entregables_fecha = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      } else {
+        // Para otros formatos, intentar parsear pero extraer componentes manualmente para evitar zona horaria
+        const dateObj = new Date(dateStr);
+        if (!isNaN(dateObj.getTime())) {
+          // Extraer componentes en zona horaria local
+          const year = dateObj.getFullYear();
+          const month = dateObj.getMonth() + 1;
+          const day = dateObj.getDate();
+          normalized.entregables_fecha = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
       }
     }
     
@@ -541,8 +499,6 @@ onUnmounted(() => {
 // Recargar cuando cambian los parámetros de ruta (cliente, talento o source)
 watch(() => [route.params.cliente, route.params.talento, route.params.source], () => {
   loadClient();
-  selectedCampaign.value = null;
-  selectedDeliverable.value = null;
 });
 </script>
 
@@ -624,9 +580,9 @@ watch(() => [route.params.cliente, route.params.talento, route.params.source], (
 
 .kpis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-2xl);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
 @media (min-width: 1200px) {
@@ -663,8 +619,10 @@ watch(() => [route.params.cliente, route.params.talento, route.params.source], (
   margin-bottom: var(--spacing-2xl);
 }
 
-.chart-wrapper {
-  height: 400px;
+.chart-section .chart-wrapper {
+  height: 500px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .table-section {

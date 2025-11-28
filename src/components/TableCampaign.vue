@@ -43,26 +43,6 @@
         />
       </div>
 
-      <div class="sort-controls">
-        <label class="sort-label">Sort by:</label>
-        <select v-model="sortBy" @change="handleSort" class="select-modern">
-          <option value="ftds">FTDs</option>
-          <option value="progress">% Target</option>
-          <option value="tba">TBA</option>
-          <option value="views">Views</option>
-          <option value="fecha">Date</option>
-        </select>
-        <button @click="toggleSortOrder" class="btn-sort" type="button" :title="sortOrder === 'desc' ? 'Descending' : 'Ascending'">
-          <svg v-if="sortOrder === 'desc'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-            <polyline points="17 6 23 6 23 12"></polyline>
-          </svg>
-          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-            <polyline points="17 18 23 18 23 12"></polyline>
-          </svg>
-        </button>
-      </div>
     </div>
     
     <div v-if="sortedCampaigns.length === 0" class="empty-state">
@@ -80,30 +60,107 @@
       <table class="table-modern">
         <thead>
           <tr>
-            <th>Campaign</th>
-            <th>Status</th>
-            <th>Period</th>
-            <th>Target</th>
-            <th>FTDs</th>
-            <th class="text-end">% Target</th>
-            <th class="text-end">TBA</th>
-            <th class="text-end">Views</th>
-            <th class="text-end">Avg Viewers</th>
-            <th class="text-end">Peak Viewers</th>
-            <th class="text-end">Minutes</th>
+            <th @click="setSort('campaign')" class="sortable">
+              <span>Campaign</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'campaign'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th @click="setSort('fecha')" class="sortable">
+              <span>Date</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'fecha'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th @click="setSort('target')" class="sortable">
+              <span>Target</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'target'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th @click="setSort('ftds')" class="sortable">
+              <span>FTDs</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'ftds'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th @click="setSort('progress')" class="sortable text-end">
+              <span>% Target</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'progress'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th @click="setSort('tba')" class="sortable text-end">
+              <span>TBA</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'tba'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <!-- Columnas de YouTube -->
+            <th v-if="hasYouTubeCampaigns" @click="setSort('views')" class="sortable text-end">
+              <span>Views</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'views'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th v-if="hasYouTubeCampaigns" @click="setSort('likes')" class="sortable text-end">
+              <span>Likes</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'likes'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th v-if="hasYouTubeCampaigns" @click="setSort('comments')" class="sortable text-end">
+              <span>Comments</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'comments'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <!-- Columnas de otras plataformas -->
+            <th v-if="!hasYouTubeCampaigns" @click="setSort('avgViewers')" class="sortable text-end">
+              <span>Avg Viewers</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'avgViewers'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th v-if="!hasYouTubeCampaigns" @click="setSort('peakViewers')" class="sortable text-end">
+              <span>Peak Viewers</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'peakViewers'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th @click="setSort('time')" class="sortable text-end">
+              <span>Time</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'time'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
+            <th v-if="!hasYouTubeCampaigns" @click="setSort('minutesWatched')" class="sortable text-end">
+              <span>Minutes</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'minutesWatched'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <template v-for="(campaign, index) in paginatedCampaigns" :key="`campaign-${campaign.entregables_URL || index}-${campaign.entregables_fecha || index}`">
-          <tr>
+          <tr :data-campaign-id="campaign.entregables_URL || campaign.id || index">
             <td>
               <div class="campaign-name">{{ campaign.NombreCampana || '-' }}</div>
-            </td>
-            <td>
-              <span :class="['status-badge', getStatusClass(campaign)]">
-                {{ getStatus(campaign) }}
-              </span>
             </td>
             <td>
               <span class="campaign-date">{{ formatDateRange(campaign.entregables_fecha) }}</span>
@@ -122,39 +179,41 @@
             <td class="text-end">
               <span class="metric-value metric-tba">${{ calculateTBA(campaign) }}</span>
             </td>
-            <td class="text-end">
+            <!-- Columnas de YouTube -->
+            <td v-if="hasYouTubeCampaigns" class="text-end">
               <span class="metric-value metric-views">{{ formatNumber(campaign.Views || 0) }}</span>
             </td>
-            <td class="text-end">
+            <td v-if="hasYouTubeCampaigns" class="text-end">
+              <span class="metric-value metric-likes">{{ formatNumber(campaign.Likes || 0) }}</span>
+            </td>
+            <td v-if="hasYouTubeCampaigns" class="text-end">
+              <span class="metric-value metric-comments">{{ formatNumber(campaign.Comments || 0) }}</span>
+            </td>
+            <!-- Columnas de otras plataformas -->
+            <td v-if="!hasYouTubeCampaigns" class="text-end">
               <span class="metric-value">{{ formatNumber(campaign['Avg Viewers'] || 0) }}</span>
             </td>
-            <td class="text-end">
+            <td v-if="!hasYouTubeCampaigns" class="text-end">
               <span class="metric-value">{{ formatNumber(campaign['Peak Viewers'] || 0) }}</span>
             </td>
             <td class="text-end">
+              <span class="metric-value">{{ formatNumber(campaign.Time || 0) }} min</span>
+            </td>
+            <td v-if="!hasYouTubeCampaigns" class="text-end">
               <span class="metric-value">{{ formatNumber(campaign['Minutes Watched'] || 0) }}</span>
             </td>
             <td>
               <div class="action-buttons">
                 <button
-                  @click="handleViewCampaign(campaign)"
-                  class="btn-details btn-campaign"
-                  title="View campaign details"
+                  @click="toggleDetails(campaign)"
+                  class="btn-details"
+                  :class="{ active: selectedDeliverable === campaign }"
+                  title="View delivery details"
                   type="button"
                 >
-                  View campaign →
+                  {{ selectedDeliverable === campaign ? 'Hide' : 'View' }} delivery
                 </button>
               </div>
-            </td>
-          </tr>
-          <!-- Panel de detalles del entregable expandible -->
-          <tr v-if="expandedIndex === index" class="details-row">
-            <td colspan="12" class="details-cell">
-              <DeliverableDetails 
-                :deliverable="campaign" 
-                :related-deliverables="getRelatedDeliverables(campaign)"
-                @close="closeDetails" 
-              />
             </td>
           </tr>
           </template>
@@ -188,11 +247,20 @@
         <option value="100">100 </option>
       </select>
     </div>
+
+    <!-- Delivery Details Section (outside table) -->
+    <div v-if="selectedDeliverable" class="delivery-details-section" ref="deliveryDetailsRef">
+      <DeliverableDetails
+        :deliverable="selectedDeliverable"
+        :related-deliverables="getRelatedDeliverables(selectedDeliverable)"
+        @close="closeDetails"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { exportToExcel, exportToCSV } from '@/utils/exportUtils.js';
 import DeliverableDetails from './DeliverableDetails.vue';
 
@@ -207,14 +275,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update-search', 'view-campaign']);
+const emit = defineEmits(['update-search']);
 
 const localSearchQuery = ref(props.searchQuery || '');
 const sortBy = ref('ftds');
 const sortOrder = ref('desc');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
-const expandedIndex = ref(null);
+const selectedDeliverable = ref(null);
+const deliveryDetailsRef = ref(null);
 
 // Computed - Campañas filtradas por búsqueda
 const filteredCampaigns = computed(() => {
@@ -241,6 +310,23 @@ const sortedCampaigns = computed(() => {
     let aValue, bValue;
     
     switch (sortBy.value) {
+      case 'campaign':
+        aValue = (a.NombreCampana || '').toLowerCase();
+        bValue = (b.NombreCampana || '').toLowerCase();
+        // Para strings, usar localeCompare
+        if (sortOrder.value === 'desc') {
+          return bValue.localeCompare(aValue);
+        } else {
+          return aValue.localeCompare(bValue);
+        }
+      case 'time':
+        aValue = parseInt(a.Time) || 0;
+        bValue = parseInt(b.Time) || 0;
+        break;
+      case 'target':
+        aValue = parseInt(a.FTDs) || 0;
+        bValue = parseInt(b.FTDs) || 0;
+        break;
       case 'ftds':
         aValue = parseInt(a.FTDObtenido) || 0;
         bValue = parseInt(b.FTDObtenido) || 0;
@@ -267,14 +353,59 @@ const sortedCampaigns = computed(() => {
         aValue = parseInt(a.Views) || 0;
         bValue = parseInt(b.Views) || 0;
         break;
+      case 'likes':
+        aValue = parseInt(a.Likes) || 0;
+        bValue = parseInt(b.Likes) || 0;
+        break;
+      case 'comments':
+        aValue = parseInt(a.Comments) || 0;
+        bValue = parseInt(b.Comments) || 0;
+        break;
+      case 'avgViewers':
+        aValue = parseInt(a['Avg Viewers']) || 0;
+        bValue = parseInt(b['Avg Viewers']) || 0;
+        break;
+      case 'peakViewers':
+        aValue = parseInt(a['Peak Viewers']) || 0;
+        bValue = parseInt(b['Peak Viewers']) || 0;
+        break;
+      case 'minutesWatched':
+        aValue = parseInt(a['Minutes Watched']) || 0;
+        bValue = parseInt(b['Minutes Watched']) || 0;
+        break;
       case 'fecha':
-        aValue = new Date(a.entregables_fecha || 0).getTime();
-        bValue = new Date(b.entregables_fecha || 0).getTime();
+        // Parsear fechas manualmente para evitar problemas de zona horaria
+        const parseDate = (dateStr) => {
+          if (!dateStr) return 0;
+          const str = dateStr.toString().trim();
+
+          // Manejo flexible de formato YYYY-MM-DD o YYYY-M-D
+          const match = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const day = parseInt(match[3], 10);
+            // Usar Date con año, mes, día directamente (sin zona horaria)
+            return new Date(year, month - 1, day).getTime();
+          }
+
+          // Para otros formatos, extraer componentes manualmente
+          const dateObj = new Date(str);
+          if (!isNaN(dateObj.getTime())) {
+            // Usar getFullYear, getMonth, getDate para evitar problemas de zona horaria
+            return new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime();
+          }
+
+          return 0;
+        };
+        aValue = parseDate(a.entregables_fecha);
+        bValue = parseDate(b.entregables_fecha);
         break;
       default:
         return 0;
     }
     
+    // Manejar comparación de números
     if (sortOrder.value === 'desc') {
       return bValue - aValue;
     } else {
@@ -302,13 +433,29 @@ const formatNumber = (value) => {
 const formatDate = (date) => {
   if (!date) return '-';
   try {
-    const dateObj = new Date(date);
+    const dateStr = date.toString().trim();
+
+    // Intentar parsear manualmente formato YYYY-MM-DD
+    const dateMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (dateMatch) {
+      const year = parseInt(dateMatch[1], 10);
+      const month = parseInt(dateMatch[2], 10);
+      const day = parseInt(dateMatch[3], 10);
+
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[month - 1]} ${day}, ${year}`;
+    }
+
+    // Fallback con Date object usando métodos locales
+    const dateObj = new Date(dateStr);
     if (isNaN(dateObj.getTime())) return date;
-    return dateObj.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth();
+    const day = dateObj.getDate();
+
+    return `${monthNames[month]} ${day}, ${year}`;
   } catch {
     return date;
   }
@@ -317,13 +464,57 @@ const formatDate = (date) => {
 const formatDateRange = (date) => {
   if (!date) return '-';
   try {
-    const dateObj = new Date(date);
+    const dateStr = date.toString().trim();
+
+    // Regex más flexible para capturar YYYY-MM-DD o YYYY-M-D (con o sin ceros)
+    const dateMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+    if (dateMatch) {
+      const year = parseInt(dateMatch[1], 10);
+      const month = parseInt(dateMatch[2], 10);
+      const day = parseInt(dateMatch[3], 10);
+
+      // Validar que los valores sean correctos
+      if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+        console.warn('[formatDateRange] Invalid date parts:', { dateStr, year, month, day });
+        return dateStr;
+      }
+
+      const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const dayStr = String(day).padStart(2, '0');
+      const monthStr = monthNames[month - 1];
+
+      const result = `${dayStr} ${monthStr}`;
+      return result;
+    }
+
+    // For dates coming as Date object or complete ISO format
+    // Parse manually to avoid timezone
+    const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+    if (isoMatch) {
+      const year = parseInt(isoMatch[1], 10);
+      const month = parseInt(isoMatch[2], 10);
+      const day = parseInt(isoMatch[3], 10);
+
+      const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const dayStr = String(day).padStart(2, '0');
+      const monthStr = monthNames[month - 1];
+
+      return `${dayStr} ${monthStr}`;
+    }
+
+    // Last resort: use Date but forcing local timezone
+    const dateObj = new Date(dateStr);
     if (isNaN(dateObj.getTime())) return date;
-    return dateObj.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: 'short'
-    });
-  } catch {
+
+    // Use getDate(), getMonth() instead of toLocaleDateString to avoid problems
+    const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const day = dateObj.getDate();
+    const month = dateObj.getMonth();
+
+    return `${String(day).padStart(2, '0')} ${monthNames[month]}`;
+  } catch (e) {
+    console.error('[formatDateRange] Error:', e, 'Input:', date);
     return date;
   }
 };
@@ -332,9 +523,35 @@ const getStatus = (campaign) => {
   // Determinar estado basado en fecha y progreso
   const progress = calculateProgress(campaign);
   if (progress >= 100) return 'Completed';
-  const date = new Date(campaign.entregables_fecha);
+
+  if (!campaign.entregables_fecha) return 'Paused';
+
+  const dateStr = campaign.entregables_fecha.toString().trim();
+  let date;
+
+  // Parsear fecha manualmente para evitar problemas de zona horaria
+  const match = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
+    // Crear fecha local (sin conversión UTC)
+    date = new Date(year, month - 1, day);
+  } else {
+    const tempDate = new Date(dateStr);
+    if (!isNaN(tempDate.getTime())) {
+      // Extraer componentes para evitar zona horaria
+      date = new Date(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+    }
+  }
+
+  if (!date || isNaN(date.getTime())) return 'Paused';
+
+  // Comparar solo fechas (sin hora) para determinar si está activa
   const now = new Date();
-  if (date > now) return 'Active';
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (date > today) return 'Active';
   return 'Paused';
 };
 
@@ -367,9 +584,42 @@ const calculateTBA = (campaign) => {
   return Number((estimatedBudget / ftds).toFixed(2));
 };
 
-const isYouTube = (url) => {
-  return url && url.includes('youtube');
+// Función genérica para detectar plataforma desde URL
+const getPlatformType = (url) => {
+  if (!url) return null;
+  const urlLower = url.toLowerCase();
+  if (urlLower.includes('youtube')) return 'youtube';
+  if (urlLower.includes('kick.com') || urlLower.includes('kick')) return 'streaming';
+  if (urlLower.includes('twitch')) return 'streaming';
+  return null;
 };
+
+// Detectar la plataforma principal (la que tiene más campañas)
+const mainPlatform = computed(() => {
+  if (!props.campaigns || props.campaigns.length === 0) return null;
+  
+  const platformCounts = {};
+  props.campaigns.forEach(campaign => {
+    const platform = getPlatformType(campaign.PlataformaTalento);
+    if (platform) {
+      platformCounts[platform] = (platformCounts[platform] || 0) + 1;
+    }
+  });
+  
+  // Retornar la plataforma con más campañas
+  const sorted = Object.entries(platformCounts).sort((a, b) => b[1] - a[1]);
+  return sorted.length > 0 ? sorted[0][0] : null;
+});
+
+// Detectar si hay campañas de YouTube (para compatibilidad)
+const isYouTube = (url) => {
+  return url && url.toLowerCase().includes('youtube');
+};
+
+// Detectar si la plataforma principal es YouTube o streaming
+const hasYouTubeCampaigns = computed(() => {
+  return mainPlatform.value === 'youtube';
+});
 
 const calculateEngagement = (campaign) => {
   const views = parseInt(campaign.Views) || 0;
@@ -423,7 +673,7 @@ const toggleSortOrder = () => {
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // No hacer scroll, mantener la posición actual
   }
 };
 
@@ -445,19 +695,41 @@ watch(() => props.searchQuery, (newVal) => {
 
 watch(() => props.campaigns, () => {
   currentPage.value = 1;
-  expandedIndex.value = null;
+  selectedDeliverable.value = null;
 });
 
-const toggleDetails = (index) => {
-  if (expandedIndex.value === index) {
-    expandedIndex.value = null;
+const toggleDetails = async (campaign) => {
+  if (selectedDeliverable.value === campaign) {
+    selectedDeliverable.value = null;
   } else {
-    expandedIndex.value = index;
+    selectedDeliverable.value = campaign;
+    // Esperar a que Vue renderice el componente
+    await nextTick();
+    // Scroll suave hacia la sección de detalles después de que se renderice
+    setTimeout(() => {
+      if (deliveryDetailsRef.value) {
+        deliveryDetailsRef.value.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+        // Ajuste adicional para que quede bien visible con un pequeño offset
+        setTimeout(() => {
+          const offset = 30; // Offset para mejor visualización
+          const elementPosition = deliveryDetailsRef.value.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }, 200);
+      }
+    }, 200);
   }
 };
 
 const closeDetails = () => {
-  expandedIndex.value = null;
+  selectedDeliverable.value = null;
 };
 
 const getRelatedDeliverables = (campaign) => {
@@ -473,9 +745,6 @@ const getCampaignId = (campaign) => {
   return campaign.entregables_URL || `${campaign.NombreCampana}-${campaign.NombreCliente}-${campaign.entregables_fecha}`;
 };
 
-const handleViewCampaign = (campaign) => {
-  emit('view-campaign', campaign);
-};
 </script>
 
 <style scoped>
@@ -493,7 +762,7 @@ const handleViewCampaign = (campaign) => {
 }
 
 .table-title {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
@@ -613,17 +882,26 @@ const handleViewCampaign = (campaign) => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
   transition: all var(--transition-base);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--spacing-xs);
 }
 
 .btn-sort:hover {
   border-color: var(--accent-cyan);
   background: var(--bg-card);
+}
+
+.sort-order-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .empty-state {
@@ -675,11 +953,30 @@ const handleViewCampaign = (campaign) => {
   background: var(--accent-cyan);
 }
 
-/* Ensure table content has 14px font size */
-.table-modern,
-.table-modern th,
+/* Tabla con fuente más pequeña y formato mejorado */
+.table-modern {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.table-modern th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
 .table-modern td {
-  font-size: 14px;
+  font-size: 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
 }
 
 .text-end {
@@ -700,13 +997,25 @@ const handleViewCampaign = (campaign) => {
 .sort-indicator {
   position: absolute;
   right: var(--spacing-sm);
-  color: var(--accent-cyan);
   font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sort-indicator > span {
+  color: var(--accent-primary);
+}
+
+.sort-indicator-inactive {
+  opacity: 0.3;
+  color: var(--text-muted);
 }
 
 .campaign-name {
   font-weight: 500;
+  font-size: 0.75rem;
   color: var(--text-primary);
+  line-height: 1.4;
 }
 
 .campaign-client,
@@ -729,14 +1038,16 @@ const handleViewCampaign = (campaign) => {
 
 .campaign-date {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1.4;
 }
 
 .metric-value {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1.4;
 }
 
 .metric-views {
@@ -769,12 +1080,13 @@ const handleViewCampaign = (campaign) => {
 
 .status-badge {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
+  padding: 0.2rem 0.6rem;
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1.3;
 }
 
 .status-active {
@@ -797,7 +1109,9 @@ const handleViewCampaign = (campaign) => {
 
 .progress-percent {
   font-weight: 600;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1.4;
 }
 
 .progress-green {
@@ -860,7 +1174,8 @@ const handleViewCampaign = (campaign) => {
 
   .table-modern th,
   .table-modern td {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.7rem;
   }
 
   .table-controls {
@@ -880,18 +1195,19 @@ const handleViewCampaign = (campaign) => {
 }
 
 .btn-details {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: 0.25rem 0.75rem;
   background: transparent;
   border: 1px solid var(--accent-primary);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   color: var(--accent-primary);
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-base);
   white-space: nowrap;
   text-decoration: none;
   display: inline-block;
+  line-height: 1.4;
 }
 
 .btn-details:hover {
@@ -910,12 +1226,24 @@ const handleViewCampaign = (campaign) => {
   border-color: var(--accent-primary);
 }
 
-.details-row {
+/* Delivery Details Section (below table) */
+.delivery-details-section {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
   background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  animation: slideDown 0.3s ease-out;
 }
 
-.details-cell {
-  padding: 0 !important;
-  border-top: 2px solid var(--border-color);
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

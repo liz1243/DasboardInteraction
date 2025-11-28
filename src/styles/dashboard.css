@@ -206,8 +206,8 @@ body {
 .kpi-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
   position: relative;
   overflow: hidden;
   transition: all var(--transition-base);

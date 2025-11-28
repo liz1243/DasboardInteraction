@@ -27,10 +27,6 @@
 
     <!-- KPIs -->
     <div class="kpis-section">
-      <div class="kpi-card">
-        <span class="kpi-label">Views</span>
-        <span class="kpi-value metric-cyan">{{ formatNumber(deliverable.Views || 0) }}</span>
-      </div>
       <!-- Métricas de YouTube (Likes, Comments, Engagement) -->
       <template v-if="showYouTubeMetrics">
         <div class="kpi-card">
@@ -122,7 +118,7 @@
           </div>
           <p class="breakdown-value">{{ calculateLikeRate(deliverable) }}%</p>
           <p class="breakdown-subtitle">
-            {{ formatNumber(deliverable.Likes || 0) }} of {{ formatNumber(deliverable.Views || 0) }} views
+            {{ formatNumber(deliverable.Likes || 0) }} likes
           </p>
         </div>
 
@@ -150,7 +146,7 @@
         </div>
         <p class="breakdown-value">{{ calculateFTDConversion(deliverable) }}%</p>
         <p class="breakdown-subtitle">
-          {{ formatNumber(deliverable.FTDObtenido || 0) }} FTDs of {{ formatNumber(deliverable.Views || 0) }} views
+          {{ formatNumber(deliverable.FTDObtenido || 0) }} FTDs
         </p>
       </div>
     </div>
@@ -681,32 +677,33 @@ onBeforeUnmount(() => {
 
 .kpis-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
 .kpi-card {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md);
+  gap: 4px;
+  padding: var(--spacing-sm);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
 .kpi-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .kpi-value {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
 .kpi-subtitle {

@@ -55,7 +55,6 @@
         title="Top Talent"
         :value="ftdsData.topTalent"
         color="blue"
-        :subtitle="ftdsData.topTalentHandle"
       >
         <template #icon>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -78,6 +77,31 @@
           </svg>
         </template>
       </KpiCard>
+      <KpiCard
+        title="RNG"
+        :value="ftdsData.rng"
+        color="pink"
+        :subtitle="`Revenue per FTD`"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </template>
+      </KpiCard>
+      <KpiCard
+        title="Total Deposits"
+        :value="ftdsData.totalDeposits"
+        format="currency"
+        color="green"
+      >
+        <template #icon>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="M7 15h0M2 9.5h20"></path>
+          </svg>
+        </template>
+      </KpiCard>
     </div>
 
     <!-- Filtros Fijos (siempre visibles) -->
@@ -91,10 +115,10 @@
       />
     </div>
 
-    <!-- Gráfico de Barras - Timeline FTDs vs Entregables -->
+    <!-- Gráfico de Series Temporales con Múltiples Métricas -->
     <div class="chart-section" v-if="dashboardStore.campaigns.length > 0">
       <div class="chart-wrapper">
-        <ChartFTDsTimeline :data="dashboardStore.filteredCampaigns" />
+        <ChartTimeSeriesMultiMetrics :data="dashboardStore.filteredCampaigns" />
       </div>
     </div>
 
@@ -104,27 +128,6 @@
         :campaigns="dashboardStore.filteredCampaigns"
         :search-query="dashboardStore.filters.searchQuery"
         @update-search="handleSearchUpdate"
-        @view-campaign="handleViewCampaign"
-      />
-    </div>
-
-    <!-- Panel de Detalles de Campaña (debajo de la tabla) -->
-    <div v-if="selectedCampaign" class="campaign-details-section">
-      <CampaignDetails 
-        :campaign="selectedCampaign" 
-        :source="getSourceFromCampaign(selectedCampaign)"
-        @close="selectedCampaign = null"
-        @view-deliverable="handleViewDeliverable"
-      />
-    </div>
-
-    <!-- Panel de Detalles de Entregable (debajo del panel de campaña) -->
-    <div v-if="selectedDeliverable" class="deliverable-details-section">
-      <DeliverableDetails 
-        :deliverable="selectedDeliverable" 
-        :related-deliverables="getRelatedDeliverablesForSelected()"
-        :source="getSourceFromDeliverable(selectedDeliverable)"
-        @close="selectedDeliverable = null" 
       />
     </div>
 
@@ -149,17 +152,13 @@ import { useDashboardStore } from './dashboardStore.js';
 import KpiCard from '@/components/KpiCard.vue';
 import FiltersSidebar from '@/components/FiltersSidebar.vue';
 import TableCampaign from '@/components/TableCampaign.vue';
-import ChartFTDsTimeline from '@/components/ChartFTDsTimeline.vue';
-import CampaignDetails from '@/components/CampaignDetails.vue';
-import DeliverableDetails from '@/components/DeliverableDetails.vue';
+import ChartTimeSeriesMultiMetrics from '@/components/ChartTimeSeriesMultiMetrics.vue';
 // Opción 1: Usar API (fetch) - descomenta esta línea
 import { fetchCampaigns } from '@/services/apiService.js';
 // Opción 2: Usar JSON local (fallback) - descomenta esta línea si no tienes API
 // import campaignsData from '@/data/campaigns.json';
 
 const dashboardStore = useDashboardStore();
-const selectedCampaign = ref(null);
-const selectedDeliverable = ref(null);
 const showScrollTop = ref(false);
 
 // Detectar scroll para mostrar botón de ir arriba
@@ -183,10 +182,10 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 
-// Calcular mes actual
+// Calculate current month
 const currentMonth = computed(() => {
   const date = new Date();
-  return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 });
 
 // Calcular datos de FTDs
@@ -237,7 +236,13 @@ const ftdsData = computed(() => {
     .sort((a, b) => b[1] - a[1])[0];
   const topPlatform = topPlatformEntry ? topPlatformEntry[0] : 'N/A';
   const topPlatformFTDs = topPlatformEntry ? topPlatformEntry[1] : 0;
-  
+
+  // RNG (Revenue per FTD) - estimado como $250 por FTD
+  const rng = totalFTDs > 0 ? 250 : 0;
+
+  // Total Deposits - estimado como FTDs * $250 promedio
+  const totalDeposits = totalFTDs * 250;
+
   return {
     totalFTDs,
     targetFTDs,
@@ -246,7 +251,9 @@ const ftdsData = computed(() => {
     topTalent,
     topTalentHandle,
     topPlatform,
-    topPlatformFTDs
+    topPlatformFTDs,
+    rng,
+    totalDeposits
   };
 });
 
@@ -259,15 +266,26 @@ const normalizeCampaignData = (data) => {
     // Validar y normalizar entregables_fecha
     if (normalized.entregables_fecha) {
       // Asegurar que la fecha esté en formato ISO (YYYY-MM-DD)
-      const dateStr = normalized.entregables_fecha.toString();
-      // Si es una fecha válida, mantenerla; si no, intentar parsearla
-      const dateObj = new Date(dateStr);
-      if (!isNaN(dateObj.getTime())) {
-        // Formatear a ISO si no está ya en ese formato
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        normalized.entregables_fecha = `${year}-${month}-${day}`;
+      const dateStr = normalized.entregables_fecha.toString().trim();
+
+      // Si ya está en formato YYYY-MM-DD (o YYYY-M-D), mantenerla tal cual (parsear manualmente)
+      const dateMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (dateMatch) {
+        // Normalizar a formato YYYY-MM-DD con ceros
+        const year = parseInt(dateMatch[1], 10);
+        const month = parseInt(dateMatch[2], 10);
+        const day = parseInt(dateMatch[3], 10);
+        normalized.entregables_fecha = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      } else {
+        // Para otros formatos, intentar parsear pero extraer componentes manualmente para evitar zona horaria
+        const dateObj = new Date(dateStr);
+        if (!isNaN(dateObj.getTime())) {
+          // Extraer componentes en zona horaria local
+          const year = dateObj.getFullYear();
+          const month = dateObj.getMonth() + 1;
+          const day = dateObj.getDate();
+          normalized.entregables_fecha = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
       }
     }
     
@@ -330,57 +348,6 @@ const handleClearFilters = () => {
 
 const handleSearchUpdate = (searchQuery) => {
   dashboardStore.setFilters({ searchQuery });
-};
-
-const handleViewCampaign = (campaign) => {
-  selectedCampaign.value = campaign;
-  selectedDeliverable.value = null; // Cerrar entregable si está abierto
-  // Scroll suave hacia el panel de detalles
-  setTimeout(() => {
-    const element = document.querySelector('.campaign-details-section');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, 100);
-};
-
-const handleViewDeliverable = (deliverable) => {
-  selectedDeliverable.value = deliverable;
-  // Scroll suave hacia el panel de detalles del entregable
-  setTimeout(() => {
-    const element = document.querySelector('.deliverable-details-section');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, 100);
-};
-
-const getRelatedDeliverablesForSelected = () => {
-  if (!selectedDeliverable.value || !selectedCampaign.value) return [];
-  // Obtener entregables del mismo talento y cliente
-  return dashboardStore.campaigns.filter(c => 
-    c.NombreTalento === selectedDeliverable.value.NombreTalento &&
-    c.NombreCliente === selectedDeliverable.value.NombreCliente
-  );
-};
-
-// Determinar source basándose en la plataforma del entregable/campaña
-const getSourceFromDeliverable = (deliverable) => {
-  if (!deliverable || !deliverable.PlataformaTalento) return null;
-  const platform = deliverable.PlataformaTalento.toLowerCase();
-  if (platform.includes('youtube')) return 'youtube';
-  if (platform.includes('kick.com') || platform.includes('kick')) return 'kick';
-  if (platform.includes('twitch')) return 'twitch';
-  return null;
-};
-
-const getSourceFromCampaign = (campaign) => {
-  if (!campaign || !campaign.PlataformaTalento) return null;
-  const platform = campaign.PlataformaTalento.toLowerCase();
-  if (platform.includes('youtube')) return 'youtube';
-  if (platform.includes('kick.com') || platform.includes('kick')) return 'kick';
-  if (platform.includes('twitch')) return 'twitch';
-  return null;
 };
 </script>
 
@@ -449,14 +416,26 @@ const getSourceFromCampaign = (campaign) => {
 /* KPIs Grid */
 .kpis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1400px) {
   .kpis-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .kpis-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kpis-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -489,8 +468,10 @@ const getSourceFromCampaign = (campaign) => {
   margin-bottom: var(--spacing-2xl);
 }
 
-.chart-wrapper {
-  height: 400px;
+.chart-section .chart-wrapper {
+  height: 500px;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Campaign Details Section */
