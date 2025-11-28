@@ -80,7 +80,7 @@
       </div>
       <div class="match-score-info">
         <p class="match-score-text">
-          <strong>Match Score: {{ matchScore }}%</strong> de los FTDs fueron generados dentro de los primeros 3 días post-publicación.
+          <strong>Match Score: {{ matchScore }}%</strong> of FTDs were generated within the first 3 days post-publication.
         </p>
       </div>
     </div>

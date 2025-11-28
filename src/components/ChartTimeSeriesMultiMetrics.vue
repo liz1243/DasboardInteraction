@@ -3,7 +3,7 @@
     <div class="chart-header">
       <div class="header-content">
         <div>
-          <h3 class="chart-title">Series Temporales - Por Mes</h3>
+          <h3 class="chart-title">Time Series - By Month</h3>
           <div class="month-selector">
             <select v-model="selectedMonth" @change="updateMonth" class="month-select">
               <option v-for="month in availableMonths" :key="month.value" :value="month.value">
@@ -31,10 +31,10 @@
     <div class="chart-wrapper">
       <canvas ref="chartCanvas"></canvas>
       <div v-if="!hasData" class="no-data-message">
-        <p>No hay datos disponibles</p>
+        <p>No data available</p>
       </div>
       <div v-else-if="chartData.labels.length === 0" class="no-data-message">
-        <p>No hay datos para el mes seleccionado</p>
+        <p>No data for selected month</p>
       </div>
       <div v-else-if="chartData.datasets.length === 0" class="no-data-message">
         <p>Activa al menos una métrica para ver el gráfico</p>
@@ -80,6 +80,9 @@ let chartInstance = null;
 
 // Mes seleccionado (se inicializará con el mes con más datos)
 const selectedMonth = ref(null);
+
+// Almacenar información de fechas y clientes para el tooltip
+const chartDateInfo = ref({});
 
 // Obtener clave del mes actual (YYYY-MM)
 function getCurrentMonthKey() {
@@ -147,8 +150,8 @@ const availableMonths = computed(() => {
     const month = date.getMonth() + 1;
     const monthKey = `${year}-${String(month).padStart(2, '0')}`;
     const monthNames = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
     ];
     months.push({
       value: monthKey,
@@ -420,7 +423,8 @@ const chartData = computed(() => {
             minutesWatched: 0,
             likes: 0,
             comments: 0,
-            count: 0
+            count: 0,
+            clients: [] // Almacenar información de clientes
           };
         }
         
@@ -442,6 +446,18 @@ const chartData = computed(() => {
           grouped[dateKey].likes += likes;
           grouped[dateKey].comments += comments;
           grouped[dateKey].count += 1;
+          
+          // Almacenar información del cliente (evitar duplicados)
+          const clientInfo = {
+            cliente: campaign.NombreCliente || '-',
+            talento: campaign.NombreTalento || '-'
+          };
+          const clientExists = grouped[dateKey].clients.some(
+            c => c.cliente === clientInfo.cliente && c.talento === clientInfo.talento
+          );
+          if (!clientExists) {
+            grouped[dateKey].clients.push(clientInfo);
+          }
           
           if (index < 10) {
             sampleDates.push({ 
@@ -534,6 +550,18 @@ const chartData = computed(() => {
     // El key viene directamente del entregables_fecha, no del sistema
     return formatDateLabel(key);
   });
+  
+  // Almacenar información de clientes y fechas para el tooltip
+  const dateInfo = {};
+  sortedEntries.forEach(([key, value]) => {
+    dateInfo[key] = {
+      date: key,
+      clients: value.clients || []
+    };
+  });
+  
+  // Guardar en ref para acceso en tooltip
+  chartDateInfo.value = dateInfo;
   
   // Crear datasets solo para métricas visibles
   const datasets = availableMetrics
@@ -702,7 +730,63 @@ const createChart = () => {
             borderColor: 'rgba(255, 255, 255, 0.1)',
             borderWidth: 1,
             padding: 12,
-            displayColors: true
+            displayColors: true,
+            callbacks: {
+              title: function(context) {
+                // Mostrar la fecha
+                const dataIndex = context[0].dataIndex;
+                const dateKeys = Object.keys(chartDateInfo.value);
+                if (dateKeys[dataIndex]) {
+                  const dateKey = dateKeys[dataIndex];
+                  const [year, month, day] = dateKey.split('-');
+                  const monthNames = [
+                    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+                  ];
+                  const monthIndex = parseInt(month) - 1;
+                  return `${day} ${monthNames[monthIndex]} ${year}`;
+                }
+                return context[0].label || '';
+              },
+              label: function(context) {
+                // Mostrar métrica y valor
+                const label = context.dataset.label || '';
+                const value = context.parsed.y || 0;
+                return `${label}: ${value.toLocaleString('en-US')}`;
+              },
+              afterBody: function(context) {
+                // Mostrar información del cliente
+                const dataIndex = context[0].dataIndex;
+                const dateKeys = Object.keys(chartDateInfo.value);
+                if (dateKeys[dataIndex]) {
+                  const dateKey = dateKeys[dataIndex];
+                  const dateInfo = chartDateInfo.value[dateKey];
+                  if (dateInfo && dateInfo.clients && dateInfo.clients.length > 0) {
+                    const clients = dateInfo.clients;
+                    // Mostrar solo el primer cliente (o todos si hay pocos)
+                    if (clients.length === 1) {
+                      const client = clients[0];
+                      return [
+                        `Cliente: ${client.cliente}`,
+                        `Talento: ${client.talento}`
+                      ];
+                    } else if (clients.length <= 3) {
+                      // Mostrar todos si hay 3 o menos
+                      return clients.map(c => `Cliente: ${c.cliente} | Talento: ${c.talento}`);
+                    } else {
+                      // Si hay más de 3, mostrar solo el primero
+                      const client = clients[0];
+                      return [
+                        `Cliente: ${client.cliente}`,
+                        `Talento: ${client.talento}`,
+                        `(+${clients.length - 1} más)`
+                      ];
+                    }
+                  }
+                }
+                return [];
+              }
+            }
           }
         },
         scales: {

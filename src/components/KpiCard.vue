@@ -2,9 +2,6 @@
   <div class="kpi-card fade-in">
     <div class="kpi-header">
       <h3 class="kpi-title">{{ title }}</h3>
-      <div class="kpi-icon" :class="iconClass">
-        <slot name="icon"></slot>
-      </div>
     </div>
     <div class="kpi-value-container">
       <div class="kpi-value" :class="valueClass">
@@ -13,6 +10,9 @@
       <div class="kpi-subtitle">
         {{ subtitle }}
       </div>
+    </div>
+    <div class="kpi-icon" :class="iconClass">
+      <slot name="icon"></slot>
     </div>
   </div>
 </template>
@@ -86,15 +86,11 @@ const formatNumber = (numValue) => {
   min-height: 120px;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .kpi-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-xs);
   min-height: 2.4em;
-  gap: var(--spacing-xs);
 }
 
 .kpi-title {
@@ -114,14 +110,23 @@ const formatNumber = (numValue) => {
 }
 
 .kpi-icon {
-  width: 28px;
-  height: 28px;
+  position: absolute;
+  bottom: var(--spacing-xs);
+  right: var(--spacing-xs);
+  width: 20px;
+  height: 20px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   flex-shrink: 0;
+  z-index: 1;
+}
+
+.kpi-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Colores primarios: #fdc600, #bfbfbf, #ffd54d */
@@ -150,6 +155,7 @@ const formatNumber = (numValue) => {
   flex-direction: column;
   min-height: 2rem;
   justify-content: flex-end;
+  padding-right: 28px; /* Espacio para el icono */
 }
 
 .kpi-value {

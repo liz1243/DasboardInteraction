@@ -3,7 +3,7 @@
     <div class="filters-row-container">
       <div class="filters-buttons">
         <!-- Botón Plataforma (Source) -->
-        <div class="filter-button-group">
+        <div v-if="!disablePlatformFilter" class="filter-button-group">
           <button 
             @click="toggleDropdown('source')"
             :class="['filter-btn', { 'filter-btn-active': localFilters.source !== 'all' }]"
@@ -172,6 +172,10 @@ const props = defineProps({
   availableTalents: {
     type: Array,
     default: () => []
+  },
+  disablePlatformFilter: {
+    type: Boolean,
+    default: false
   }
 });
 

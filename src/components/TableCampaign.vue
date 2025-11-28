@@ -67,6 +67,13 @@
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
+            <th @click="setSort('cliente')" class="sortable">
+              <span>Client</span>
+              <span class="sort-indicator">
+                <span v-if="sortBy === 'cliente'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
+                <span v-else class="sort-indicator-inactive">↕</span>
+              </span>
+            </th>
             <th @click="setSort('fecha')" class="sortable">
               <span>Date</span>
               <span class="sort-indicator">
@@ -161,6 +168,12 @@
           <tr :data-campaign-id="campaign.entregables_URL || campaign.id || index">
             <td>
               <div class="campaign-name">{{ campaign.NombreCampana || '-' }}</div>
+            </td>
+            <td>
+              <div class="client-info">
+                <div class="client-name">{{ campaign.NombreCliente || '-' }}</div>
+                <div class="talent-name">{{ campaign.NombreTalento || '-' }}</div>
+              </div>
             </td>
             <td>
               <span class="campaign-date">{{ formatDateRange(campaign.entregables_fecha) }}</span>
@@ -319,6 +332,20 @@ const sortedCampaigns = computed(() => {
         } else {
           return aValue.localeCompare(bValue);
         }
+      case 'cliente':
+        // Ordenar por nombre de cliente, luego por talento
+        const aCliente = (a.NombreCliente || '').toLowerCase();
+        const bCliente = (b.NombreCliente || '').toLowerCase();
+        const aTalento = (a.NombreTalento || '').toLowerCase();
+        const bTalento = (b.NombreTalento || '').toLowerCase();
+        if (aCliente !== bCliente) {
+          return sortOrder.value === 'desc' 
+            ? bCliente.localeCompare(aCliente)
+            : aCliente.localeCompare(bCliente);
+        }
+        return sortOrder.value === 'desc'
+          ? bTalento.localeCompare(aTalento)
+          : aTalento.localeCompare(bTalento);
       case 'time':
         aValue = parseInt(a.Time) || 0;
         bValue = parseInt(b.Time) || 0;
@@ -480,7 +507,7 @@ const formatDateRange = (date) => {
         return dateStr;
       }
 
-      const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const dayStr = String(day).padStart(2, '0');
       const monthStr = monthNames[month - 1];
 
@@ -496,7 +523,7 @@ const formatDateRange = (date) => {
       const month = parseInt(isoMatch[2], 10);
       const day = parseInt(isoMatch[3], 10);
 
-      const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const dayStr = String(day).padStart(2, '0');
       const monthStr = monthNames[month - 1];
 
@@ -1016,6 +1043,25 @@ const getCampaignId = (campaign) => {
   font-size: 0.75rem;
   color: var(--text-primary);
   line-height: 1.4;
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.client-name {
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.talent-name {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
 }
 
 .campaign-client,

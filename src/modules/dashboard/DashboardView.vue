@@ -115,7 +115,7 @@
       />
     </div>
 
-    <!-- Gráfico de Series Temporales con Múltiples Métricas -->
+    <!-- Time Series Chart with Multiple Metrics -->
     <div class="chart-section" v-if="dashboardStore.campaigns.length > 0">
       <div class="chart-wrapper">
         <ChartTimeSeriesMultiMetrics :data="dashboardStore.filteredCampaigns" />
@@ -137,7 +137,7 @@
       @click="scrollToTop"
       class="scroll-to-top"
       type="button"
-      title="Ir al principio"
+      title="Go to top"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="18 15 12 9 6 15"></polyline>
@@ -166,7 +166,7 @@ const handleScroll = () => {
   showScrollTop.value = window.scrollY > 300;
 };
 
-// Ir al principio de la página
+// Go to top of the page
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,

@@ -6,11 +6,11 @@
     
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
-      <button @click="handleBackToDashboard" class="btn-back">Volver al Dashboard</button>
+      <button @click="handleBackToDashboard" class="btn-back">Back to Dashboard</button>
     </div>
     
     <div v-else-if="clientName" class="client-content">
-      <!-- Header con nombre del cliente -->
+      <!-- Header with client name -->
       <div class="client-header">
         <button @click="handleBackToDashboard" class="btn-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -53,7 +53,7 @@
           </template>
         </KpiCard>
         <KpiCard
-          title="TBA Promedio"
+          title="Average TBA"
           :value="ftdsData.avgTBA"
           format="currency"
           color="pink"
@@ -69,7 +69,6 @@
           title="Top Talent"
           :value="ftdsData.topTalent"
           color="blue"
-          :subtitle="ftdsData.topTalentHandle"
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -92,6 +91,31 @@
             </svg>
           </template>
         </KpiCard>
+        <KpiCard
+          title="RNG"
+          :value="ftdsData.rng"
+          color="pink"
+          :subtitle="`Revenue per FTD`"
+        >
+          <template #icon>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+          </template>
+        </KpiCard>
+        <KpiCard
+          title="Total Deposits"
+          :value="ftdsData.totalDeposits"
+          format="currency"
+          color="green"
+        >
+          <template #icon>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <path d="M7 15h0M2 9.5h20"></path>
+            </svg>
+          </template>
+        </KpiCard>
       </div>
 
       <!-- Filtros Fijos (siempre visibles) -->
@@ -100,12 +124,13 @@
           :filters="dashboardStore.filters"
           :available-clients="dashboardStore.availableClients"
           :available-talents="dashboardStore.availableTalents"
+          :disable-platform-filter="true"
           @update-filters="handleUpdateFilters"
           @clear-filters="handleClearFilters"
         />
       </div>
 
-      <!-- Gráfico de Series Temporales con Múltiples Métricas -->
+      <!-- Time Series Chart with Multiple Metrics -->
       <div class="chart-section" v-if="filteredCampaigns.length > 0">
         <div class="chart-wrapper">
           <ChartTimeSeriesMultiMetrics :data="filteredCampaigns" />
@@ -133,7 +158,7 @@
       @click="scrollToTop"
       class="scroll-to-top"
       type="button"
-      title="Ir al principio"
+      title="Go to top"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="18 15 12 9 6 15"></polyline>
@@ -167,7 +192,7 @@ const handleScroll = () => {
   showScrollTop.value = window.scrollY > 300;
 };
 
-// Ir al principio de la página
+// Go to top of the page
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
@@ -175,7 +200,7 @@ const scrollToTop = () => {
   });
 };
 
-// Campañas filtradas por cliente
+// Campaigns filtered by client
 const filteredCampaigns = computed(() => {
   if (!clientName.value) return [];
   return dashboardStore.campaigns.filter(c => 
@@ -183,29 +208,29 @@ const filteredCampaigns = computed(() => {
   );
 });
 
-// Calcular mes actual
+// Calculate current month
 const currentMonth = computed(() => {
   const date = new Date();
-  return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 });
 
 // Calcular datos de FTDs
 const ftdsData = computed(() => {
   const campaigns = filteredCampaigns.value;
   
-  // Total FTDs obtenidos
+  // Total FTDs obtained
   const totalFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDObtenido) || 0), 0);
   
-  // Meta total (suma de FTDs meta)
+  // Total target (sum of target FTDs)
   const targetFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDs) || 0), 0);
   
-  // % Meta alcanzada
+  // % Target achieved
   const metaProgress = targetFTDs > 0 ? (totalFTDs / targetFTDs) * 100 : 0;
   
-  // TBA promedio (asumiendo un presupuesto estimado)
+  // Average TBA (assuming an estimated budget)
   const avgTBA = totalFTDs > 0 ? 50 : 0; // Placeholder - ajustar según datos reales
   
-  // Top talento por FTDs
+  // Top talent by FTDs
   const talentFTDs = {};
   campaigns.forEach(c => {
     const talent = c.NombreTalento || 'Unknown';
@@ -220,7 +245,7 @@ const ftdsData = computed(() => {
   const topTalent = topTalentEntry ? topTalentEntry[0].split(' ')[0] : '-';
   const topTalentHandle = topTalentEntry ? topTalentEntry[1].handle : '';
   
-  // Plataforma top (extraer dominio de PlataformaTalento)
+  // Top platform (extract domain from PlataformaTalento)
   const platformCounts = {};
   campaigns.forEach(c => {
     const platform = c.PlataformaTalento || '';
@@ -237,6 +262,12 @@ const ftdsData = computed(() => {
     .sort((a, b) => b[1] - a[1])[0];
   const topPlatform = topPlatformEntry ? topPlatformEntry[0] : 'N/A';
   const topPlatformFTDs = topPlatformEntry ? topPlatformEntry[1] : 0;
+
+  // RNG (Revenue per FTD) - estimado como $250 por FTD
+  const rng = totalFTDs > 0 ? 250 : 0;
+
+  // Total Deposits - estimated as FTDs * $250 average
+  const totalDeposits = totalFTDs * 250;
   
   return {
     totalFTDs,
@@ -246,19 +277,21 @@ const ftdsData = computed(() => {
     topTalent,
     topTalentHandle,
     topPlatform,
-    topPlatformFTDs
+    topPlatformFTDs,
+    rng,
+    totalDeposits
   };
 });
 
-// Cargar cliente basado en los parámetros de ruta
+// Load client based on route parameters
 const loadClient = async () => {
-  // Leer parámetros de ruta de la URL
+  // Read route parameters from URL
   const clienteParam = route.params.cliente;
   const talentoParam = route.params.talento;
   const sourceParam = route.params.source;
   
   if (!clienteParam) {
-    error.value = 'Parámetro "cliente" no proporcionado en la URL';
+    error.value = 'Parameter "client" not provided in URL';
     loading.value = false;
     return;
   }
@@ -267,25 +300,25 @@ const loadClient = async () => {
   error.value = null;
 
   try {
-    // Decodificar el nombre del cliente y talento (pueden venir codificados)
+    // Decode client and talent names (may come encoded)
     const decodedClientName = decodeRouteParam(clienteParam);
     const decodedTalentName = talentoParam ? decodeRouteParam(talentoParam) : null;
     const decodedSource = sourceParam ? decodeRouteParam(sourceParam) : null;
     
-    // Guardar el nombre del cliente en el ref
+    // Save client name in ref
     clientName.value = decodedClientName;
     
     try {
       const { fetchCampaignsByClient } = await import('@/services/apiService.js');
       
-      // Cargar datos filtrados por cliente (y talento y source si están presentes) desde la API
+      // Load filtered data by client (and talent and source if present) from API
       const filteredData = await fetchCampaignsByClient(decodedClientName, decodedTalentName, decodedSource);
       
-      // Normalizar datos
+      // Normalize data
       const normalizedData = filteredData.map(campaign => {
         const normalized = { ...campaign };
         
-        // Validar y normalizar entregables_fecha
+        // Validate and normalize entregables_fecha
         if (normalized.entregables_fecha) {
           const dateStr = normalized.entregables_fecha.toString();
           const dateObj = new Date(dateStr);
@@ -316,24 +349,24 @@ const loadClient = async () => {
         return normalized;
       });
       
-      // Guardar datos filtrados en el store
+      // Save filtered data in store
       dashboardStore.setCampaigns(normalizedData);
       
-      // Aplicar filtro de cliente automáticamente
+      // Apply client filter automatically
       dashboardStore.setFilters({ client: decodedClientName });
       if (decodedTalentName) {
         dashboardStore.setFilters({ talent: decodedTalentName });
       }
       
     } catch (apiError) {
-      console.warn('Error al cargar datos filtrados desde API, usando fallback:', apiError);
+      console.warn('Error loading filtered data from API, using fallback:', apiError);
       
-      // Fallback: cargar todos los datos y filtrar localmente
+      // Fallback: load all data and filter locally
       try {
         const { fetchCampaigns } = await import('@/services/apiService.js');
         const allData = await fetchCampaigns();
         
-        // Normalizar y filtrar localmente
+        // Normalize and filter locally
         const normalizedData = allData
           .filter(c => c.NombreCliente && c.NombreCliente === decodedClientName)
           .map(campaign => {
@@ -373,13 +406,13 @@ const loadClient = async () => {
           dashboardStore.setFilters({ talent: decodedTalentName });
         }
       } catch (fallbackError) {
-        error.value = 'Error al cargar los datos: ' + fallbackError.message;
+        error.value = 'Error loading data: ' + fallbackError.message;
         loading.value = false;
         return;
       }
     }
   } catch (err) {
-    error.value = 'Error al cargar el cliente: ' + err.message;
+    error.value = 'Error loading client: ' + err.message;
     console.error('Error en loadClient:', err);
   } finally {
     loading.value = false;
@@ -392,7 +425,7 @@ const handleUpdateFilters = (newFilters) => {
 
 const handleClearFilters = () => {
   dashboardStore.resetFilters();
-  // Mantener el filtro de cliente
+  // Keep client filter
   if (clientName.value) {
     dashboardStore.setFilters({ client: clientName.value });
   }
@@ -462,7 +495,7 @@ const handleBackToDashboard = async () => {
     try {
       rawData = await fetchCampaigns();
     } catch (apiError) {
-      console.warn('Error al cargar desde API, usando JSON local como fallback:', apiError);
+      console.warn('Error loading from API, using local JSON as fallback:', apiError);
       // Fallback a JSON local si la API falla
       const campaignsData = await import('@/data/campaigns.json');
       rawData = campaignsData.default || campaignsData;
@@ -478,7 +511,7 @@ const handleBackToDashboard = async () => {
     // Navegar al dashboard
     router.push('/');
   } catch (error) {
-    console.error('Error al recargar datos:', error);
+    console.error('Error reloading data:', error);
     // Navegar de todas formas
     router.push('/');
   } finally {
@@ -496,7 +529,7 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 
-// Recargar cuando cambian los parámetros de ruta (cliente, talento o source)
+// Reload when route parameters change (client, talent or source)
 watch(() => [route.params.cliente, route.params.talento, route.params.source], () => {
   loadClient();
 });
@@ -580,14 +613,26 @@ watch(() => [route.params.cliente, route.params.talento, route.params.source], (
 
 .kpis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1400px) {
   .kpis-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .kpis-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kpis-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
