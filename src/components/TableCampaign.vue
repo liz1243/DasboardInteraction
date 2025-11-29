@@ -81,13 +81,6 @@
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th @click="setSort('target')" class="sortable">
-              <span>Target</span>
-              <span class="sort-indicator">
-                <span v-if="sortBy === 'target'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
-                <span v-else class="sort-indicator-inactive">↕</span>
-              </span>
-            </th>
             <th @click="setSort('ftds')" class="sortable">
               <span>FTDs</span>
               <span class="sort-indicator">
@@ -95,14 +88,7 @@
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th @click="setSort('progress')" class="sortable text-end">
-              <span>% Target</span>
-              <span class="sort-indicator">
-                <span v-if="sortBy === 'progress'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
-                <span v-else class="sort-indicator-inactive">↕</span>
-              </span>
-            </th>
-            <th @click="setSort('tba')" class="sortable text-end">
+            <th @click="setSort('tba')" class="sortable text-center">
               <span>TBA</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'tba'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
@@ -110,21 +96,21 @@
               </span>
             </th>
             <!-- Columnas de YouTube -->
-            <th v-if="hasYouTubeCampaigns" @click="setSort('views')" class="sortable text-end">
+            <th v-if="hasYouTubeCampaigns" @click="setSort('views')" class="sortable text-center">
               <span>Views</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'views'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th v-if="hasYouTubeCampaigns" @click="setSort('likes')" class="sortable text-end">
+            <th v-if="hasYouTubeCampaigns" @click="setSort('likes')" class="sortable text-center">
               <span>Likes</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'likes'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th v-if="hasYouTubeCampaigns" @click="setSort('comments')" class="sortable text-end">
+            <th v-if="hasYouTubeCampaigns" @click="setSort('comments')" class="sortable text-center">
               <span>Comments</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'comments'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
@@ -132,28 +118,28 @@
               </span>
             </th>
             <!-- Columnas de otras plataformas -->
-            <th v-if="!hasYouTubeCampaigns" @click="setSort('avgViewers')" class="sortable text-end">
+            <th v-if="!hasYouTubeCampaigns" @click="setSort('avgViewers')" class="sortable text-center">
               <span>Avg Viewers</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'avgViewers'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th v-if="!hasYouTubeCampaigns" @click="setSort('peakViewers')" class="sortable text-end">
+            <th v-if="!hasYouTubeCampaigns" @click="setSort('peakViewers')" class="sortable text-center">
               <span>Peak Viewers</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'peakViewers'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th @click="setSort('time')" class="sortable text-end">
+            <th v-if="!hasYouTubeCampaigns"  @click="setSort('time')" class="sortable text-center">
               <span>Time</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'time'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
-            <th v-if="!hasYouTubeCampaigns" @click="setSort('minutesWatched')" class="sortable text-end">
+            <th v-if="!hasYouTubeCampaigns" @click="setSort('minutesWatched')" class="sortable text-center">
               <span>Minutes</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'minutesWatched'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
@@ -178,41 +164,33 @@
             <td>
               <span class="campaign-date">{{ formatDateRange(campaign.entregables_fecha) }}</span>
             </td>
-            <td>
-              <span class="metric-value">{{ formatNumber(campaign.FTDs || 0) }}</span>
-            </td>
-            <td>
+            <td class="text-center">
               <span class="metric-value metric-ftds">{{ formatNumber(campaign.FTDObtenido || 0) }}</span>
             </td>
-            <td class="text-end">
-              <span :class="['progress-percent', getProgressClass(campaign)]">
-                {{ calculateProgress(campaign) }}%
-              </span>
-            </td>
-            <td class="text-end">
+            <td class="text-center">
               <span class="metric-value metric-tba">${{ calculateTBA(campaign) }}</span>
             </td>
             <!-- Columnas de YouTube -->
-            <td v-if="hasYouTubeCampaigns" class="text-end">
+            <td v-if="hasYouTubeCampaigns" class="text-center">
               <span class="metric-value metric-views">{{ formatNumber(campaign.Views || 0) }}</span>
             </td>
-            <td v-if="hasYouTubeCampaigns" class="text-end">
+            <td v-if="hasYouTubeCampaigns" class="text-center">
               <span class="metric-value metric-likes">{{ formatNumber(campaign.Likes || 0) }}</span>
             </td>
-            <td v-if="hasYouTubeCampaigns" class="text-end">
+            <td v-if="hasYouTubeCampaigns" class="text-center">
               <span class="metric-value metric-comments">{{ formatNumber(campaign.Comments || 0) }}</span>
             </td>
             <!-- Columnas de otras plataformas -->
-            <td v-if="!hasYouTubeCampaigns" class="text-end">
+            <td v-if="!hasYouTubeCampaigns" class="text-center">
               <span class="metric-value">{{ formatNumber(campaign['Avg Viewers'] || 0) }}</span>
             </td>
-            <td v-if="!hasYouTubeCampaigns" class="text-end">
+            <td v-if="!hasYouTubeCampaigns" class="text-center">
               <span class="metric-value">{{ formatNumber(campaign['Peak Viewers'] || 0) }}</span>
             </td>
-            <td class="text-end">
+            <td v-if="!hasYouTubeCampaigns" class="text-center">
               <span class="metric-value">{{ formatNumber(campaign.Time || 0) }} min</span>
             </td>
-            <td v-if="!hasYouTubeCampaigns" class="text-end">
+            <td v-if="!hasYouTubeCampaigns" class="text-center">
               <span class="metric-value">{{ formatNumber(campaign['Minutes Watched'] || 0) }}</span>
             </td>
             <td>
@@ -221,10 +199,10 @@
                   @click="toggleDetails(campaign)"
                   class="btn-details"
                   :class="{ active: selectedDeliverable === campaign }"
-                  title="View delivery details"
+                  title="View deliverable details"
                   type="button"
                 >
-                  {{ selectedDeliverable === campaign ? 'Hide' : 'View' }} delivery
+                  {{ selectedDeliverable === campaign ? 'Hide' : 'View' }} deliverable
                 </button>
               </div>
             </td>
@@ -1008,6 +986,10 @@ const getCampaignId = (campaign) => {
 
 .text-end {
   text-align: right;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .sortable {

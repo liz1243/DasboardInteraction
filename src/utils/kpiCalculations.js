@@ -54,6 +54,37 @@ export function filterCampaigns(campaigns, filters) {
     });
   }
 
+  // Filtro por rango de fechas (entregables_fecha)
+  if (filters.dateStart || filters.dateEnd) {
+    filtered = filtered.filter(campaign => {
+      if (!campaign.entregables_fecha) return false;
+      
+      const campaignDateStr = campaign.entregables_fecha.toString().trim();
+      const dateMatch = campaignDateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      
+      if (!dateMatch) return false;
+      
+      const year = parseInt(dateMatch[1], 10);
+      const month = parseInt(dateMatch[2], 10);
+      const day = parseInt(dateMatch[3], 10);
+      const campaignDate = new Date(year, month - 1, day);
+      
+      if (filters.dateStart) {
+        const startDate = new Date(filters.dateStart);
+        startDate.setHours(0, 0, 0, 0);
+        if (campaignDate < startDate) return false;
+      }
+      
+      if (filters.dateEnd) {
+        const endDate = new Date(filters.dateEnd);
+        endDate.setHours(23, 59, 59, 999);
+        if (campaignDate > endDate) return false;
+      }
+      
+      return true;
+    });
+  }
+
   return filtered;
 }
 

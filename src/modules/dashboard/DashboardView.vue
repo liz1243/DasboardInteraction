@@ -13,6 +13,7 @@
     <!-- KPIs -->
     <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0">
       <KpiCard
+        v-if="ftdsData.totalFTDs > 0"
         title="Total FTDs"
         :value="ftdsData.totalFTDs"
         color="cyan"
@@ -26,7 +27,8 @@
         </template>
       </KpiCard>
       <KpiCard
-        title="Target Achieved %"
+        v-if="ftdsData.metaProgress > 0"
+        title=" CPA Target %"
         :value="ftdsData.metaProgress"
         format="percentage"
         color="green"
@@ -39,7 +41,8 @@
         </template>
       </KpiCard>
       <KpiCard
-        title="Average TBA"
+        v-if="ftdsData.avgTBA > 0"
+        title="Average CPA"
         :value="ftdsData.avgTBA"
         format="currency"
         color="pink"
@@ -52,6 +55,7 @@
         </template>
       </KpiCard>
       <KpiCard
+        v-if="ftdsData.topTalent && ftdsData.topTalent !== '-'"
         title="Top Talent"
         :value="ftdsData.topTalent"
         color="blue"
@@ -64,7 +68,8 @@
         </template>
       </KpiCard>
       <KpiCard
-        title="Top Platform"
+        v-if="ftdsData.topPlatform && ftdsData.topPlatform !== 'N/A' && ftdsData.topPlatformFTDs > 0"
+        title="Top Channel"
         :value="ftdsData.topPlatform"
         color="cyan"
         :subtitle="`${ftdsData.topPlatformFTDs} FTDs`"
@@ -78,10 +83,10 @@
         </template>
       </KpiCard>
       <KpiCard
-        title="RNG"
+        v-if="ftdsData.rng > 0"
+        title="Revenue per FTDs"
         :value="ftdsData.rng"
         color="pink"
-        :subtitle="`Revenue per FTD`"
       >
         <template #icon>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -90,7 +95,8 @@
         </template>
       </KpiCard>
       <KpiCard
-        title="Total Deposits"
+        v-if="ftdsData.totalDeposits > 0"
+        title="NGR"
         :value="ftdsData.totalDeposits"
         format="currency"
         color="green"

@@ -57,11 +57,6 @@
           <span class="kpi-value metric-green">{{ formatNumber(deliverable['Minutes Watched'] || 0) }}</span>
         </div>
       </template>
-      <div class="kpi-card">
-        <span class="kpi-label">Associated FTDs</span>
-        <span class="kpi-value metric-purple">{{ formatNumber(deliverable.FTDObtenido || 0) }}</span>
-        <span class="kpi-subtitle">Match Score: {{ matchScore }}%</span>
-      </div>
     </div>
 
     <!-- Timeline Chart -->
@@ -72,84 +67,6 @@
       </div>
     </div>
 
-    <!-- Daily FTD Distribution -->
-    <div class="chart-card chart-full">
-      <h4 class="chart-title">Daily FTDs Distribution</h4>
-      <div class="chart-wrapper">
-        <canvas ref="dailyChartCanvas"></canvas>
-      </div>
-      <div class="match-score-info">
-        <p class="match-score-text">
-          <strong>Match Score: {{ matchScore }}%</strong> of FTDs were generated within the first 3 days post-publication.
-        </p>
-      </div>
-    </div>
-
-    <!-- Content Preview -->
-    <div class="chart-card chart-full">
-      <h4 class="chart-title">Content Preview</h4>
-      <div class="content-preview">
-        <div class="preview-placeholder">
-          <div class="preview-icon">{{ getPlatformIcon(deliverable.PlataformaTalento) }}</div>
-          <p class="preview-text">Stream en {{ extractPlatform(deliverable.PlataformaTalento) }}</p>
-          <p class="preview-subtitle">{{ truncateTitle(deliverable.Tituloentregable || '-') }}</p>
-          <a 
-            v-if="deliverable.entregables_URL" 
-            :href="deliverable.entregables_URL" 
-            target="_blank"
-            rel="noopener noreferrer"
-            class="preview-link"
-          >
-            Ver contenido original →
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Engagement Breakdown -->
-    <div class="engagement-breakdown">
-      <template v-if="showYouTubeMetrics">
-        <div class="breakdown-card">
-          <div class="breakdown-header">
-            <span class="breakdown-label">Like Rate</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-pink">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </div>
-          <p class="breakdown-value">{{ calculateLikeRate(deliverable) }}%</p>
-          <p class="breakdown-subtitle">
-            {{ formatNumber(deliverable.Likes || 0) }} likes
-          </p>
-        </div>
-
-        <div class="breakdown-card">
-          <div class="breakdown-header">
-            <span class="breakdown-label">Comment Rate</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-blue">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-          </div>
-          <p class="breakdown-value">{{ calculateCommentRate(deliverable) }}%</p>
-          <p class="breakdown-subtitle">
-            {{ formatNumber(deliverable.Comments || 0) }} comments
-          </p>
-        </div>
-      </template>
-
-      <div class="breakdown-card">
-        <div class="breakdown-header">
-          <span class="breakdown-label">FTD Conversion</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breakdown-icon icon-green">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-        </div>
-        <p class="breakdown-value">{{ calculateFTDConversion(deliverable) }}%</p>
-        <p class="breakdown-subtitle">
-          {{ formatNumber(deliverable.FTDObtenido || 0) }} FTDs
-        </p>
-      </div>
-    </div>
   </div>
 </template>
 

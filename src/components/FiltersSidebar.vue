@@ -133,6 +133,62 @@
           </div>
         </div>
 
+        <!-- Botón Fecha -->
+        <div class="filter-button-group">
+          <button 
+            @click="toggleDropdown('date')"
+            :class="['filter-btn', { 'filter-btn-active': hasDateFilters }]"
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Date Range</span>
+            <span v-if="hasDateFilters" class="filter-badge">
+              {{ formatDateRange() }}
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div v-if="activeDropdown === 'date'" class="dropdown-menu dropdown-menu-large">
+            <div class="dropdown-dates">
+              <div class="date-input-group">
+                <label for="date-start">Start Date</label>
+                <input
+                  id="date-start"
+                  type="date"
+                  class="input-date"
+                  :value="localFilters.dateStart || ''"
+                  @change="updateDateFilter('dateStart', $event.target.value)"
+                />
+              </div>
+              <div class="date-input-group">
+                <label for="date-end">End Date</label>
+                <input
+                  id="date-end"
+                  type="date"
+                  class="input-date"
+                  :value="localFilters.dateEnd || ''"
+                  @change="updateDateFilter('dateEnd', $event.target.value)"
+                  :min="localFilters.dateStart || ''"
+                />
+              </div>
+              <button
+                v-if="hasDateFilters"
+                @click="clearDateFilters"
+                class="dropdown-item"
+                type="button"
+                style="margin-top: var(--spacing-xs);"
+              >
+                Clear dates
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- Botón Limpiar -->
         <button 
@@ -182,7 +238,11 @@ const props = defineProps({
 const emit = defineEmits(['update-filters', 'clear-filters']);
 
 const activeDropdown = ref(null);
-const localFilters = ref({ ...props.filters });
+const localFilters = ref({ 
+  dateStart: null,
+  dateEnd: null,
+  ...props.filters 
+});
 const hasData = computed(() => {
   return props.availableClients.length > 0 || props.availableTalents.length > 0;
 });
@@ -190,7 +250,12 @@ const hasData = computed(() => {
 const hasActiveFilters = computed(() => {
   return localFilters.value.source !== 'all' ||
          localFilters.value.client !== 'all' ||
-         localFilters.value.talent !== 'all';
+         localFilters.value.talent !== 'all' ||
+         hasDateFilters.value;
+});
+
+const hasDateFilters = computed(() => {
+  return !!(localFilters.value.dateStart || localFilters.value.dateEnd);
 });
 
 const getPlatformLabel = (source) => {
@@ -203,7 +268,11 @@ const getPlatformLabel = (source) => {
 };
 
 watch(() => props.filters, (newFilters) => {
-  localFilters.value = { ...newFilters };
+  localFilters.value = { 
+    dateStart: null,
+    dateEnd: null,
+    ...newFilters 
+  };
 }, { deep: true });
 
 // Si cambia la plataforma, cliente o la lista de talentos, resetear filtros si no son válidos
@@ -283,12 +352,57 @@ const updateFilters = () => {
   emit('update-filters', { ...localFilters.value });
 };
 
+const updateDateFilter = (key, value) => {
+  localFilters.value[key] = value || null;
+  
+  // Validar que la fecha de fin sea mayor o igual a la de inicio
+  if (key === 'dateStart' && localFilters.value.dateEnd) {
+    if (localFilters.value.dateEnd < value) {
+      localFilters.value.dateEnd = null;
+    }
+  }
+  
+  updateFilters();
+};
+
+const clearDateFilters = () => {
+  localFilters.value.dateStart = null;
+  localFilters.value.dateEnd = null;
+  updateFilters();
+};
+
+const formatDateRange = () => {
+  if (!localFilters.value.dateStart && !localFilters.value.dateEnd) {
+    return '';
+  }
+  
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return `${month} ${day}, ${year}`;
+  };
+  
+  if (localFilters.value.dateStart && localFilters.value.dateEnd) {
+    return `${formatDate(localFilters.value.dateStart)} - ${formatDate(localFilters.value.dateEnd)}`;
+  } else if (localFilters.value.dateStart) {
+    return `From ${formatDate(localFilters.value.dateStart)}`;
+  } else if (localFilters.value.dateEnd) {
+    return `Until ${formatDate(localFilters.value.dateEnd)}`;
+  }
+  return '';
+};
+
 const clearAllFilters = () => {
   localFilters.value = {
     ...localFilters.value,
     source: 'all',
     client: 'all',
-    talent: 'all'
+    talent: 'all',
+    dateStart: null,
+    dateEnd: null
   };
   emit('clear-filters');
   closeDropdown();
@@ -296,6 +410,10 @@ const clearAllFilters = () => {
 
 // Cerrar dropdowns al hacer clic fuera
 const handleClickOutside = (event) => {
+  // No cerrar si se hace clic dentro del dropdown de fechas o en los inputs
+  if (event.target.closest('.dropdown-menu') || event.target.closest('.input-date')) {
+    return;
+  }
   if (!event.target.closest('.filter-button-group')) {
     closeDropdown();
   }

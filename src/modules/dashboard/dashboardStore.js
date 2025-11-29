@@ -17,7 +17,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     source: 'all', // Plataforma: youtube, kick, twitch, all
     client: 'all',
     talent: 'all',
-    searchQuery: ''
+    searchQuery: '',
+    dateStart: null,
+    dateEnd: null
   });
 
   // Computed - Campañas filtradas
@@ -25,13 +27,49 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return filterCampaigns(campaigns.value, filters.value);
   });
 
-  // Filtrar campañas por plataforma seleccionada
+  // Filtrar campañas por plataforma seleccionada (también aplica filtro de fechas)
   const campaignsBySource = computed(() => {
-    if (filters.value.source === 'all') return campaigns.value;
-    return campaigns.value.filter(campaign => {
-      const platform = getPlatformFromUrl(campaign.PlataformaTalento);
-      return platform === filters.value.source;
-    });
+    // Primero aplicar filtro de plataforma
+    let filtered = campaigns.value;
+    if (filters.value.source !== 'all') {
+      filtered = filtered.filter(campaign => {
+        const platform = getPlatformFromUrl(campaign.PlataformaTalento);
+        return platform === filters.value.source;
+      });
+    }
+    
+    // Luego aplicar filtro de fechas si existe
+    if (filters.value.dateStart || filters.value.dateEnd) {
+      filtered = filtered.filter(campaign => {
+        if (!campaign.entregables_fecha) return false;
+        
+        const campaignDateStr = campaign.entregables_fecha.toString().trim();
+        const dateMatch = campaignDateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        
+        if (!dateMatch) return false;
+        
+        const year = parseInt(dateMatch[1], 10);
+        const month = parseInt(dateMatch[2], 10);
+        const day = parseInt(dateMatch[3], 10);
+        const campaignDate = new Date(year, month - 1, day);
+        
+        if (filters.value.dateStart) {
+          const startDate = new Date(filters.value.dateStart);
+          startDate.setHours(0, 0, 0, 0);
+          if (campaignDate < startDate) return false;
+        }
+        
+        if (filters.value.dateEnd) {
+          const endDate = new Date(filters.value.dateEnd);
+          endDate.setHours(23, 59, 59, 999);
+          if (campaignDate > endDate) return false;
+        }
+        
+        return true;
+      });
+    }
+    
+    return filtered;
   });
 
   const availableTalents = computed(() => {
@@ -75,7 +113,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
       source: 'all',
       client: 'all',
       talent: 'all',
-      searchQuery: ''
+      searchQuery: '',
+      dateStart: null,
+      dateEnd: null
     };
   }
 

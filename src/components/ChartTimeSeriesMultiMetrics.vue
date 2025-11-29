@@ -167,18 +167,26 @@ const updateMonth = () => {
   // El computed chartData se actualizará automáticamente
 };
 
-// Colores primarios (solo 3)
-const primaryColors = ['#fdc600', '#bfbfbf', '#ffd54d']; // Amarillo, Gris, Amarillo claro
+// Colores Miela - asignación específica según requerimientos
+const mielaColors = {
+  ftds: '#FDC600',           // Amarillo Miela - siempre visible (mismo en YouTube y Streaming)
+  views: '#0D21A1',          // Azul oscuro Miela - solo YouTube
+  likes: '#F7F4F3',          // Blanco Miela - solo YouTube
+  comments: '#1a5f3f',       // Verde oscuro - solo YouTube
+  avgViewers: '#0D21A1',     // Azul oscuro Miela - solo Streaming
+  peakViewers: '#F7F4F3',    // Blanco Miela - solo Streaming
+  minutesWatched: '#26a69a'  // Verde azulado - solo Streaming
+};
 
-// Métricas disponibles - usando solo los 3 colores primarios en rotación
+// Métricas disponibles - cada una con su color único de la paleta Miela
 const availableMetrics = [
-  { key: 'ftds', label: 'FTDs Obtenidos', color: primaryColors[0], field: 'FTDObtenido' },
-  { key: 'views', label: 'Views', color: primaryColors[0], field: 'Views' },
-  { key: 'avgViewers', label: 'Avg Viewers', color: primaryColors[1], field: 'Avg Viewers' },
-  { key: 'peakViewers', label: 'Peak Viewers', color: primaryColors[1], field: 'Peak Viewers' },
-  { key: 'minutesWatched', label: 'Minutes Watched', color: primaryColors[2], field: 'Minutes Watched' },
-  { key: 'likes', label: 'Likes', color: primaryColors[0], field: 'Likes' },
-  { key: 'comments', label: 'Comments', color: primaryColors[2], field: 'Comments' }
+  { key: 'ftds', label: 'FTDs Obtenidos', color: mielaColors.ftds, field: 'FTDObtenido' },
+  { key: 'views', label: 'Views', color: mielaColors.views, field: 'Views' },
+  { key: 'avgViewers', label: 'Avg Viewers', color: mielaColors.avgViewers, field: 'Avg Viewers' },
+  { key: 'peakViewers', label: 'Peak Viewers', color: mielaColors.peakViewers, field: 'Peak Viewers' },
+  { key: 'minutesWatched', label: 'Minutes Watched', color: mielaColors.minutesWatched, field: 'Minutes Watched' },
+  { key: 'likes', label: 'Likes', color: mielaColors.likes, field: 'Likes' },
+  { key: 'comments', label: 'Comments', color: mielaColors.comments, field: 'Comments' }
 ];
 
 // Función genérica para detectar plataforma desde URL
