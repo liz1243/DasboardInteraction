@@ -7,7 +7,7 @@
           <div class="header-badges">
             <span class="badge badge-outline">Stream</span>
             <span class="badge badge-secondary">
-              {{ getPlatformIcon(deliverable.PlataformaTalento) }} {{ extractPlatform(deliverable.PlataformaTalento) }}
+              {{ extractPlatform(deliverable.PlataformaTalento) }}
             </span>
           </div>
         </div>

@@ -362,6 +362,10 @@ const updateDateFilter = (key, value) => {
     }
   }
   
+  // Cerrar el dropdown después de actualizar
+  closeDropdown();
+  
+  // Emitir actualización de filtros para refrescar todo
   updateFilters();
 };
 
@@ -379,18 +383,18 @@ const formatDateRange = () => {
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const day = date.getDate();
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
-    return `${month} ${day}, ${year}`;
+    return `${day}/${month}/${year}`;
   };
   
   if (localFilters.value.dateStart && localFilters.value.dateEnd) {
     return `${formatDate(localFilters.value.dateStart)} - ${formatDate(localFilters.value.dateEnd)}`;
   } else if (localFilters.value.dateStart) {
-    return `From ${formatDate(localFilters.value.dateStart)}`;
+    return `Desde ${formatDate(localFilters.value.dateStart)}`;
   } else if (localFilters.value.dateEnd) {
-    return `Until ${formatDate(localFilters.value.dateEnd)}`;
+    return `Hasta ${formatDate(localFilters.value.dateEnd)}`;
   }
   return '';
 };

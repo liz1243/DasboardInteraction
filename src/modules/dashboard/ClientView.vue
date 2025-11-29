@@ -1,5 +1,5 @@
 <template>
-  <div class="client-view">
+  <div class="client-view" :key="refreshKey">
     <div v-if="loading" class="loading-state">
       <p>Loading...</p>
     </div>
@@ -20,18 +20,25 @@
         </button>
         <div class="client-title-section">
           <h1 class="client-title">{{ clientName }}</h1>
-          <p class="client-subtitle">{{ currentMonth }}</p>
         </div>
       </div>
-
+      <div class="filters-section-sticky" v-if="filteredCampaigns.length > 0">
+        <FiltersSidebar
+          :filters="dashboardStore.filters"
+          :available-clients="dashboardStore.availableClients"
+          :available-talents="dashboardStore.availableTalents"
+          :disable-platform-filter="true"
+          @update-filters="handleUpdateFilters"
+          @clear-filters="handleClearFilters"
+        />
+      </div>
       <!-- KPIs -->
-      <div class="kpis-grid" v-if="filteredCampaigns.length > 0">
+      <div class="kpis-grid" v-if="filteredCampaigns.length > 0" :key="`kpis-${refreshKey}`">
         <KpiCard
           v-if="ftdsData.totalFTDs > 0"
           title="Total FTDs"
           :value="ftdsData.totalFTDs"
           color="cyan"
-          :subtitle="`of ${ftdsData.targetFTDs} target`"
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -110,7 +117,7 @@
         </KpiCard>
         <KpiCard
           v-if="ftdsData.totalDeposits > 0"
-          title="Net Gaming Revenue"
+          title="Revenue"
           :value="ftdsData.totalDeposits"
           format="currency"
           color="green"
@@ -125,16 +132,7 @@
       </div>
 
       <!-- Filtros Fijos (siempre visibles) -->
-      <div class="filters-section-sticky" v-if="filteredCampaigns.length > 0">
-        <FiltersSidebar
-          :filters="dashboardStore.filters"
-          :available-clients="dashboardStore.availableClients"
-          :available-talents="dashboardStore.availableTalents"
-          :disable-platform-filter="true"
-          @update-filters="handleUpdateFilters"
-          @clear-filters="handleClearFilters"
-        />
-      </div>
+    
 
       <!-- Time Series Chart with Multiple Metrics -->
       <div class="chart-section" v-if="filteredCampaigns.length > 0">
@@ -187,6 +185,19 @@ import { fetchCampaigns } from '@/services/apiService.js';
 const route = useRoute();
 const router = useRouter();
 const dashboardStore = useDashboardStore();
+
+// Key reactivo para forzar actualización cuando cambien los filtros
+const refreshKey = computed(() => {
+  const filters = dashboardStore.filters;
+  return JSON.stringify({
+    source: filters.source,
+    client: filters.client,
+    talent: filters.talent,
+    dateStart: filters.dateStart,
+    dateEnd: filters.dateEnd,
+    searchQuery: filters.searchQuery
+  });
+});
 
 const clientName = ref(null);
 const loading = ref(true);
@@ -429,6 +440,8 @@ const loadClient = async () => {
 
 const handleUpdateFilters = (newFilters) => {
   dashboardStore.setFilters(newFilters);
+  // Scroll al inicio para mostrar la actualización desde el título
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const handleClearFilters = () => {
@@ -555,7 +568,6 @@ watch(() => [route.params.cliente, route.params.talento, route.params.source], (
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-xl);
-  margin-bottom: var(--spacing-2xl);
   flex-wrap: wrap;
 }
 

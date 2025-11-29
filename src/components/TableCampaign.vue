@@ -82,14 +82,14 @@
               </span>
             </th>
             <th @click="setSort('ftds')" class="sortable">
-              <span>FTDs</span>
+              <span>CONVERSIONS</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'ftds'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>
               </span>
             </th>
             <th @click="setSort('tba')" class="sortable text-center">
-              <span>TBA</span>
+              <span>CPA</span>
               <span class="sort-indicator">
                 <span v-if="sortBy === 'tba'">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
                 <span v-else class="sort-indicator-inactive">↕</span>

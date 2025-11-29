@@ -1,23 +1,31 @@
 <template>
-  <div class="dashboard-view">
+  <div class="dashboard-view" :key="refreshKey">
     <!-- Header -->
     <div class="dashboard-header">
       <div class="header-content">
         <div class="header-title">
           <h1 class="dashboard-title">Campaigns Dashboard</h1>
-          <p class="dashboard-subtitle">{{ currentMonth }}</p>
         </div>
       </div>
     </div>
 
+    <!-- Filtros Fijos (siempre visibles) -->
+    <div class="filters-section-sticky" v-if="dashboardStore.campaigns.length > 0">
+      <FiltersSidebar
+        :filters="dashboardStore.filters"
+        :available-clients="dashboardStore.availableClients"
+        :available-talents="dashboardStore.availableTalents"
+        @update-filters="handleUpdateFilters"
+        @clear-filters="handleClearFilters"
+      />
+    </div>
     <!-- KPIs -->
-    <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0">
+    <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0" :key="`kpis-${refreshKey}`">
       <KpiCard
         v-if="ftdsData.totalFTDs > 0"
         title="Total FTDs"
         :value="ftdsData.totalFTDs"
         color="cyan"
-        :subtitle="`of ${ftdsData.targetFTDs} target`"
       >
         <template #icon>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -96,7 +104,7 @@
       </KpiCard>
       <KpiCard
         v-if="ftdsData.totalDeposits > 0"
-        title="NGR"
+        title="Revenue"
         :value="ftdsData.totalDeposits"
         format="currency"
         color="green"
@@ -110,16 +118,7 @@
       </KpiCard>
     </div>
 
-    <!-- Filtros Fijos (siempre visibles) -->
-    <div class="filters-section-sticky" v-if="dashboardStore.campaigns.length > 0">
-      <FiltersSidebar
-        :filters="dashboardStore.filters"
-        :available-clients="dashboardStore.availableClients"
-        :available-talents="dashboardStore.availableTalents"
-        @update-filters="handleUpdateFilters"
-        @clear-filters="handleClearFilters"
-      />
-    </div>
+    
 
     <!-- Time Series Chart with Multiple Metrics -->
     <div class="chart-section" v-if="dashboardStore.campaigns.length > 0">
@@ -166,6 +165,19 @@ import { fetchCampaigns } from '@/services/apiService.js';
 
 const dashboardStore = useDashboardStore();
 const showScrollTop = ref(false);
+
+// Key reactivo para forzar actualización cuando cambien los filtros
+const refreshKey = computed(() => {
+  const filters = dashboardStore.filters;
+  return JSON.stringify({
+    source: filters.source,
+    client: filters.client,
+    talent: filters.talent,
+    dateStart: filters.dateStart,
+    dateEnd: filters.dateEnd,
+    searchQuery: filters.searchQuery
+  });
+});
 
 // Detectar scroll para mostrar botón de ir arriba
 const handleScroll = () => {
@@ -346,6 +358,8 @@ onMounted(async () => {
 
 const handleUpdateFilters = (newFilters) => {
   dashboardStore.setFilters(newFilters);
+  // Scroll al inicio para mostrar la actualización desde el título
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const handleClearFilters = () => {
@@ -365,7 +379,6 @@ const handleSearchUpdate = (searchQuery) => {
 }
 
 .dashboard-header {
-  margin-bottom: var(--spacing-2xl);
 }
 
 .header-content {

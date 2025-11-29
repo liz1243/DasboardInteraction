@@ -180,7 +180,7 @@ const mielaColors = {
 
 // Métricas disponibles - cada una con su color único de la paleta Miela
 const availableMetrics = [
-  { key: 'ftds', label: 'FTDs Obtenidos', color: mielaColors.ftds, field: 'FTDObtenido' },
+  { key: 'ftds', label: 'Conversions', color: mielaColors.ftds, field: 'FTDObtenido' },
   { key: 'views', label: 'Views', color: mielaColors.views, field: 'Views' },
   { key: 'avgViewers', label: 'Avg Viewers', color: mielaColors.avgViewers, field: 'Avg Viewers' },
   { key: 'peakViewers', label: 'Peak Viewers', color: mielaColors.peakViewers, field: 'Peak Viewers' },
