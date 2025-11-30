@@ -10,6 +10,21 @@
                 {{ month.label }}
               </option>
             </select>
+            <select 
+              v-if="!staticPlatform" 
+              v-model="selectedPlatform" 
+              @change="updatePlatform" 
+              class="platform-select"
+            >
+              <option value="all">All Platforms</option>
+              <option value="youtube">YouTube</option>
+              <option value="kick">Kick</option>
+              <option value="twitch">Twitch</option>
+            </select>
+            <div v-else class="platform-static">
+              <span class="platform-label">Platform:</span>
+              <span class="platform-value">{{ getPlatformLabel(staticPlatform) }}</span>
+            </div>
           </div>
         </div>
         <div class="metrics-filter">
@@ -72,6 +87,14 @@ const props = defineProps({
   data: {
     type: Array,
     default: () => []
+  },
+  selectedPlatformFromStore: {
+    type: String,
+    default: 'all'
+  },
+  staticPlatform: {
+    type: String,
+    default: null // Si se proporciona, muestra la plataforma de forma estática (no editable)
   }
 });
 
@@ -80,6 +103,9 @@ let chartInstance = null;
 
 // Mes seleccionado (se inicializará con el mes con más datos)
 const selectedMonth = ref(null);
+
+// Plataforma seleccionada
+const selectedPlatform = ref(props.staticPlatform || props.selectedPlatformFromStore || 'all');
 
 // Almacenar información de fechas y clientes para el tooltip
 const chartDateInfo = ref({});
@@ -167,6 +193,22 @@ const updateMonth = () => {
   // El computed chartData se actualizará automáticamente
 };
 
+// Función para obtener el label de la plataforma
+function getPlatformLabel(platform) {
+  const labels = {
+    'youtube': 'YouTube',
+    'kick': 'Kick',
+    'twitch': 'Twitch',
+    'all': 'All Platforms'
+  };
+  return labels[platform] || platform;
+}
+
+// Función para actualizar la plataforma
+function updatePlatform() {
+  // El computed chartData se actualizará automáticamente
+}
+
 // Colores Miela - asignación específica según requerimientos
 const mielaColors = {
   ftds: '#FDC600',           // Amarillo Miela - siempre visible (mismo en YouTube y Streaming)
@@ -194,8 +236,8 @@ const getPlatformType = (url) => {
   if (!url) return null;
   const urlLower = url.toLowerCase();
   if (urlLower.includes('youtube')) return 'youtube';
-  if (urlLower.includes('kick.com') || urlLower.includes('kick')) return 'streaming';
-  if (urlLower.includes('twitch')) return 'streaming';
+  if (urlLower.includes('kick.com') || urlLower.includes('kick')) return 'kick';
+  if (urlLower.includes('twitch')) return 'twitch';
   return null;
 };
 
@@ -328,10 +370,25 @@ const chartData = computed(() => {
     return { labels: [], datasets: [] };
   }
 
+  // Filtrar datos por plataforma si hay una seleccionada
+  let filteredData = props.data;
+  const platformToFilter = props.staticPlatform || selectedPlatform.value;
+  
+  if (platformToFilter && platformToFilter !== 'all') {
+    filteredData = props.data.filter(campaign => {
+      const platform = getPlatformType(campaign.PlataformaTalento);
+      return platform === platformToFilter;
+    });
+  }
+  
+  // Si no hay datos después del filtro, retornar vacío
+  if (filteredData.length === 0) {
+    return { labels: [], datasets: [] };
+  }
 
   // Si no hay mes seleccionado, seleccionar el mes con más datos
   if (!selectedMonth.value) {
-    selectedMonth.value = getMonthWithMostData(props.data);
+    selectedMonth.value = getMonthWithMostData(filteredData);
   }
 
   // Parsear mes seleccionado (YYYY-MM)
@@ -354,7 +411,7 @@ const chartData = computed(() => {
   let skippedOutOfRange = 0;
   const sampleDates = [];
   
-  props.data.forEach((campaign, index) => {
+  filteredData.forEach((campaign, index) => {
     // Si no tiene fecha de entregable, saltar (no podemos agrupar sin fecha)
     if (!campaign.entregables_fecha || campaign.entregables_fecha === '' || campaign.entregables_fecha.toString().trim() === '') {
       skippedNoDate++;
@@ -536,7 +593,7 @@ const chartData = computed(() => {
                     value.likes > 0 || value.comments > 0;
     
     // También verificar si este dateKey existe en los datos originales
-    const existsInData = props.data.some(campaign => {
+    const existsInData = filteredData.some(campaign => {
       if (!campaign.entregables_fecha) return false;
       const dateStr = campaign.entregables_fecha.toString().trim();
       if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -887,6 +944,27 @@ watch(
   }
 );
 
+watch(
+  () => selectedPlatform.value,
+  () => {
+    if (chartUpdateTimeout) {
+      clearTimeout(chartUpdateTimeout);
+    }
+    chartUpdateTimeout = setTimeout(() => {
+      createChart();
+    }, 150);
+  }
+);
+
+watch(
+  () => props.selectedPlatformFromStore,
+  (newPlatform) => {
+    if (!props.staticPlatform && newPlatform) {
+      selectedPlatform.value = newPlatform;
+    }
+  }
+);
+
 onMounted(() => {
   // Marcar como montado
   isMounted.value = true;
@@ -960,9 +1038,14 @@ onBeforeUnmount(() => {
 
 .month-selector {
   margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
-.month-select {
+.month-select,
+.platform-select {
   padding: 4px 8px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
@@ -973,13 +1056,36 @@ onBeforeUnmount(() => {
   transition: all var(--transition-base);
 }
 
-.month-select:hover {
+.month-select:hover,
+.platform-select:hover {
   border-color: var(--border-hover);
 }
 
-.month-select:focus {
+.month-select:focus,
+.platform-select:focus {
   outline: none;
   border-color: var(--accent-primary);
+}
+
+.platform-static {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+}
+
+.platform-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.platform-value {
+  color: var(--accent-primary);
+  font-weight: 600;
 }
 
 .chart-subtitle {

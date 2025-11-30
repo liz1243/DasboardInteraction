@@ -39,6 +39,7 @@
           title="Total FTDs"
           :value="ftdsData.totalFTDs"
           color="cyan"
+          tooltip="First time depositors for iGaming, crypto and trading campaigns, first user play for gaming campaigns."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -49,10 +50,11 @@
         </KpiCard>
         <KpiCard
           v-if="ftdsData.metaProgress > 0"
-          title=" CPA Target %"
+          title="CPA Target %"
           :value="ftdsData.metaProgress"
           format="percentage"
           color="green"
+          tooltip="Percentage of cost per acquisition target achieved based on paid amount and target FTDs."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,6 +69,7 @@
           :value="ftdsData.avgTBA"
           format="currency"
           color="pink"
+          tooltip="Average cost per acquisition calculated from campaign budget and obtained FTDs."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -80,6 +83,7 @@
           title="Top Talent"
           :value="ftdsData.topTalent"
           color="blue"
+          tooltip="Talent with the highest number of first time depositors."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,6 +98,7 @@
           :value="ftdsData.topPlatform"
           color="cyan"
           :subtitle="`${ftdsData.topPlatformFTDs} FTDs`"
+          tooltip="Platform or channel with the highest number of first time depositors."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -105,9 +110,10 @@
         </KpiCard>
         <KpiCard
           v-if="ftdsData.rng > 0"
-          title="Revenue per FTDs"
+          title="Revenue"
           :value="ftdsData.rng"
           color="pink"
+          tooltip="Net gaming revenue generated from campaigns."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -117,10 +123,11 @@
         </KpiCard>
         <KpiCard
           v-if="ftdsData.totalDeposits > 0"
-          title="Revenue"
+          title="Deposits"
           :value="ftdsData.totalDeposits"
           format="currency"
           color="green"
+          tooltip="Total deposits amount from first time depositors."
         >
           <template #icon>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -137,7 +144,11 @@
       <!-- Time Series Chart with Multiple Metrics -->
       <div class="chart-section" v-if="filteredCampaigns.length > 0">
         <div class="chart-wrapper">
-          <ChartTimeSeriesMultiMetrics :data="filteredCampaigns" />
+          <ChartTimeSeriesMultiMetrics 
+            :data="filteredCampaigns" 
+            :selected-platform-from-store="dashboardStore.filters.source"
+            :static-platform="clientSource || (dashboardStore.filters.source !== 'all' ? dashboardStore.filters.source : null)"
+          />
         </div>
       </div>
 
@@ -200,6 +211,7 @@ const refreshKey = computed(() => {
 });
 
 const clientName = ref(null);
+const clientSource = ref(null); // Plataforma desde la URL
 const loading = ref(true);
 const error = ref(null);
 const showScrollTop = ref(false);
@@ -236,15 +248,61 @@ const currentMonth = computed(() => {
 // Calcular datos de FTDs
 const ftdsData = computed(() => {
   const campaigns = filteredCampaigns.value;
+  const filters = dashboardStore.filters;
   
-  // Total FTDs obtained
+  // Total FTDs obtained (del cliente)
   const totalFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDObtenido) || 0), 0);
   
   // Total target (sum of target FTDs)
   const targetFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDs) || 0), 0);
   
-  // % Target achieved
-  const metaProgress = targetFTDs > 0 ? (totalFTDs / targetFTDs) * 100 : 0;
+  // CPA Target % = (Monto pagado por la campaña / FTDs objetivo) / CPA objetivo * 100
+  // Monto pagado = TBA real * FTDs obtenidos
+  // TBA real = Presupuesto estimado / FTDs obtenidos = (FTDs objetivo * 50) / FTDs obtenidos
+  // Monto pagado real = TBA real * FTDs obtenidos = (FTDs objetivo * 50) / FTDs obtenidos * FTDs obtenidos = FTDs objetivo * 50
+  // Pero esto siempre da lo mismo. Necesitamos usar el costo real basado en FTDs obtenidos.
+  // Alternativa: Monto pagado = TBA promedio * FTDs obtenidos totales
+  let metaProgress = 0;
+  
+  const totalFTDsObjetivo = campaigns.reduce((sum, c) => {
+    return sum + (Number(c.FTDs) || 0);
+  }, 0);
+  
+  const totalFTDsObtenidos = campaigns.reduce((sum, c) => {
+    return sum + (Number(c.FTDObtenido) || 0);
+  }, 0);
+  
+  // Calcular monto total pagado basado en el costo real por FTD obtenido
+  // Si hay FTDs obtenidos, el monto pagado real sería el presupuesto usado
+  // Presupuesto estimado total = FTDs objetivo * 50
+  // Pero el monto pagado real debería ser proporcional a los FTDs obtenidos
+  // Monto pagado = (FTDs obtenidos / FTDs objetivo) * Presupuesto estimado
+  const presupuestoEstimadoTotal = totalFTDsObjetivo * 50;
+  const totalMontoPagado = totalFTDsObjetivo > 0 
+    ? (totalFTDsObtenidos / totalFTDsObjetivo) * presupuestoEstimadoTotal
+    : 0;
+  
+  // CPA Target = Monto pagado / FTDs objetivo
+  const cpaTarget = totalFTDsObjetivo > 0 ? (totalMontoPagado / totalFTDsObjetivo) : 0;
+  
+  // CPA objetivo = $50 por FTD objetivo
+  const cpaObjetivo = 50;
+  
+  // CPA Target % = (CPA Target / CPA objetivo) * 100
+  metaProgress = cpaObjetivo > 0 ? (cpaTarget / cpaObjetivo) * 100 : 0;
+  
+  // Debug: mostrar valores calculados
+  console.log('CPA Target % Calculation (ClientView):', {
+    totalMontoPagado,
+    totalFTDsObjetivo,
+    totalFTDsObtenidos,
+    presupuestoEstimadoTotal,
+    cpaTarget: cpaTarget.toFixed(2),
+    cpaObjetivo,
+    metaProgress: metaProgress.toFixed(2) + '%',
+    expected: cpaObjetivo > 0 ? `(${cpaTarget.toFixed(2)} / ${cpaObjetivo}) * 100 = ${metaProgress.toFixed(2)}%` : 'N/A',
+    totalCampaigns: campaigns.length
+  });
   
   // Average TBA (assuming an estimated budget)
   const avgTBA = totalFTDs > 0 ? 50 : 0; // Placeholder - ajustar según datos reales
@@ -324,8 +382,9 @@ const loadClient = async () => {
     const decodedTalentName = talentoParam ? decodeRouteParam(talentoParam) : null;
     const decodedSource = sourceParam ? decodeRouteParam(sourceParam) : null;
     
-    // Save client name in ref
+    // Save client name and source in refs
     clientName.value = decodedClientName;
+    clientSource.value = decodedSource; // Guardar la plataforma de la URL
     
     try {
       const { fetchCampaignsByClient } = await import('@/services/apiService.js');
@@ -576,7 +635,6 @@ watch(() => [route.params.cliente, route.params.talento, route.params.source], (
 }
 
 .client-title {
-  font-size: 2.5rem;
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-pink) 100%);
   -webkit-background-clip: text;
