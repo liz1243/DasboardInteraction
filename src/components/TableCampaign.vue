@@ -346,13 +346,9 @@ const sortedCampaigns = computed(() => {
         bValue = bTarget > 0 ? (bObtained / bTarget) * 100 : 0;
         break;
       case 'tba':
-        const aFtds = parseInt(a.FTDObtenido) || 0;
-        const aBudget = (parseInt(a.FTDs) || 0) * 50;
-        aValue = aFtds > 0 ? aBudget / aFtds : 0;
-        
-        const bFtds = parseInt(b.FTDObtenido) || 0;
-        const bBudget = (parseInt(b.FTDs) || 0) * 50;
-        bValue = bFtds > 0 ? bBudget / bFtds : 0;
+        // Usar el CPA real del campo CPA (que viene de CPAobtenido en la API)
+        aValue = parseFloat(a.CPA) || 0;
+        bValue = parseFloat(b.CPA) || 0;
         break;
       case 'views':
         aValue = parseInt(a.Views) || 0;
@@ -582,11 +578,9 @@ const getProgressClass = (campaign) => {
 };
 
 const calculateTBA = (campaign) => {
-  const ftds = parseInt(campaign.FTDObtenido) || 0;
-  // Asumiendo un presupuesto estimado basado en FTDs meta
-  const estimatedBudget = (parseInt(campaign.FTDs) || 0) * 50; // $50 por FTD meta
-  if (ftds === 0) return '0.00';
-  return Number((estimatedBudget / ftds).toFixed(2));
+  // Usar el CPA real del campo CPA (que viene de CPAobtenido en la API)
+  const cpa = parseFloat(campaign.CPA) || 0;
+  return cpa.toFixed(2);
 };
 
 // Función genérica para detectar plataforma desde URL

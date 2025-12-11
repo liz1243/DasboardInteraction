@@ -242,17 +242,15 @@ const ftdsData = computed(() => {
   const totalFTDsObtenidos = campaigns.reduce((sum, c) => {
     return sum + (Number(c.FTDObtenido) || 0);
   }, 0);
-  
-  // Calcular monto total pagado basado en el costo real por FTD obtenido
-  // Si hay FTDs obtenidos, el monto pagado real sería el presupuesto usado
-  // Presupuesto estimado total = FTDs objetivo * 50
-  // Pero el monto pagado real debería ser proporcional a los FTDs obtenidos
-  // Monto pagado = (FTDs obtenidos / FTDs objetivo) * Presupuesto estimado
-  const presupuestoEstimadoTotal = totalFTDsObjetivo * 50;
-  const totalMontoPagado = totalFTDsObjetivo > 0 
-    ? (totalFTDsObtenidos / totalFTDsObjetivo) * presupuestoEstimadoTotal
-    : 0;
-  
+
+  // Calcular monto total pagado usando el CPA real de cada campaña
+  // Presupuesto Real = Suma de (CPA real × FTDs obtenidos) por cada campaña
+  const totalMontoPagado = campaigns.reduce((sum, c) => {
+    const cpa = parseFloat(c.CPA) || 0;
+    const ftdsObtenidos = Number(c.FTDObtenido) || 0;
+    return sum + (cpa * ftdsObtenidos);
+  }, 0);
+
   // CPA Target = Monto pagado / FTDs objetivo
   const cpaTarget = totalFTDsObjetivo > 0 ? (totalMontoPagado / totalFTDsObjetivo) : 0;
   
@@ -264,10 +262,9 @@ const ftdsData = computed(() => {
   
   // Debug: mostrar valores calculados
   console.log('CPA Target % Calculation:', {
-    totalMontoPagado,
+    totalMontoPagado: totalMontoPagado.toFixed(2),
     totalFTDsObjetivo,
     totalFTDsObtenidos,
-    presupuestoEstimadoTotal,
     cpaTarget: cpaTarget.toFixed(2),
     cpaObjetivo,
     metaProgress: metaProgress.toFixed(2) + '%',
