@@ -304,8 +304,10 @@ const ftdsData = computed(() => {
     totalCampaigns: campaigns.length
   });
   
-  // Average TBA (assuming an estimated budget)
-  const avgTBA = totalFTDs > 0 ? 50 : 0; // Placeholder - ajustar según datos reales
+  // CPA promedio (calculado del campo CPA real de la API)
+  const totalCPA = campaigns.reduce((sum, c) => sum + (parseFloat(c.CPA) || 0), 0);
+  const campaignsWithCPA = campaigns.filter(c => (parseFloat(c.CPA) || 0) > 0).length;
+  const avgTBA = campaignsWithCPA > 0 ? totalCPA / campaignsWithCPA : 0;
   
   // Top talent by FTDs
   const talentFTDs = {};
@@ -340,11 +342,11 @@ const ftdsData = computed(() => {
   const topPlatform = topPlatformEntry ? topPlatformEntry[0] : 'N/A';
   const topPlatformFTDs = topPlatformEntry ? topPlatformEntry[1] : 0;
 
-  // RNG (Revenue per FTD) - estimado como $250 por FTD
-  const rng = totalFTDs > 0 ? 250 : 0;
+  // Revenue (suma real del campo Revenue/NRG del API)
+  const rng = campaigns.reduce((sum, c) => sum + (parseFloat(c.Revenue) || 0), 0);
 
-  // Total Deposits - estimated as FTDs * $250 average
-  const totalDeposits = totalFTDs * 250;
+  // Total Deposits (suma real del campo Deposits del API)
+  const totalDeposits = campaigns.reduce((sum, c) => sum + (parseFloat(c.Deposits) || 0), 0);
   
   return {
     totalFTDs,
