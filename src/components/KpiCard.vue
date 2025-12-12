@@ -27,7 +27,7 @@
         {{ formattedValue }}
       </div>
       <div class="kpi-subtitle">
-        {{ subtitle }} asdasdd
+        {{ subtitle }}
       </div>
     </div>
     <div class="kpi-icon" :class="iconClass">
