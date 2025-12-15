@@ -209,14 +209,14 @@ function updatePlatform() {
   // El computed chartData se actualizará automáticamente
 }
 
-// Colores Miela - asignación específica según requerimientos
+// Colores del esquema - amarillo para acentuar, blanco secundario
 const mielaColors = {
-  ftds: '#FDC600',           // Amarillo Miela - siempre visible (mismo en YouTube y Streaming)
-  views: '#0D21A1',          // Azul oscuro Miela - solo YouTube
-  likes: '#F7F4F3',          // Blanco Miela - solo YouTube
-  comments: '#1a5f3f',       // Verde oscuro - solo YouTube
-  avgViewers: '#0D21A1',     // Azul oscuro Miela - solo Streaming
-  peakViewers: '#F7F4F3',    // Blanco Miela - solo Streaming
+  ftds: '#F0B90B',           // Amarillo estilo Binance - acento principal (resalta conversiones)
+  views: '#0D21A1',          // Azul oscuro - solo YouTube
+  likes: '#ffffff',          // Blanco - secundario (solo YouTube)
+  comments: '#FFD54F',       // Amarillo claro - variación para comentarios (solo YouTube)
+  avgViewers: '#0D21A1',     // Azul oscuro - solo Streaming
+  peakViewers: '#ffffff',    // Blanco - secundario (solo Streaming)
   minutesWatched: '#26a69a'  // Verde azulado - solo Streaming
 };
 

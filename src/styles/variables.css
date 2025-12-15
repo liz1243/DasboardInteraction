@@ -1,7 +1,7 @@
 :root {
   /* Colores genéricos */
-  --color-yellow: #fdc600;
-  --color-yellow-rgb: 253, 198, 0;
+  --color-yellow: #F0B90B; /* Amarillo estilo Binance para acentuar */
+  --color-yellow-rgb: 240, 185, 11;
   --color-black: #000000;
   --color-black-rgb: 0, 0, 0;
   --color-white: #ffffff;
@@ -13,15 +13,19 @@
   --bg-tertiary: #141414;
   --bg-card: rgb(10, 10, 10);
   --bg-glass: rgba(10, 10, 10, 0.85);
-  
+
   /* Textos */
   --text-primary: var(--color-white);
-  --text-secondary: #a8b0c1;
+  --text-secondary: var(--color-white); /* Blanco como secundario */
   --text-muted: #6b7280;
-  
-  /* Acento principal (unificado) */
+
+  /* Acento principal - amarillo para resaltar */
   --accent-primary: var(--color-yellow);
   --accent-primary-rgb: var(--color-yellow-rgb);
+
+  /* Color secundario - blanco */
+  --accent-secondary: var(--color-white);
+  --accent-secondary-rgb: var(--color-white-rgb);
 
   /* Mapear acentos anteriores al acento principal para afectar a todo */
   --accent-cyan: var(--accent-primary);
@@ -71,16 +75,17 @@
   /* Colores base para gráficos */
   --chart-bg: #000000;
   --chart-text: #ffffff;
-  --chart-primary: #fdc600; /* igual a --accent-primary */
+  --chart-primary: var(--accent-primary); /* Amarillo para acentuar/resaltar */
   --chart-views: var(--chart-primary);
-  /* Secundario solicitado */
-  --chart-secondary: #bfbfbf;
-  --chart-secondary-rgb: 191, 191, 191;
-  /* Asignamos Likes al secundario para diferenciar */
+  /* Secundario - Blanco para elementos secundarios */
+  --chart-secondary: var(--accent-secondary);
+  --chart-secondary-rgb: var(--accent-secondary-rgb);
+  /* Asignamos Likes al secundario (blanco) */
   --chart-likes: var(--chart-secondary);
   --chart-likes-rgb: var(--chart-secondary-rgb);
-  --chart-comments: #ffd54d;
-  --chart-comments-rgb: 255, 213, 77;
+  /* Comentarios con un tono amarillo más claro para variación */
+  --chart-comments: #FFD54F;
+  --chart-comments-rgb: 255, 213, 79;
   --chart-axis: var(--metallic-silver);
   --chart-grid: rgba(192, 192, 192, 0.2);
 }
