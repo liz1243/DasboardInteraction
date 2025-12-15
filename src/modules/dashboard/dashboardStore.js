@@ -14,8 +14,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
   
   // Filtros
   const filters = ref({
-    source: 'all', // Plataforma: youtube, kick, twitch, all
     client: 'all',
+    campaign: 'all',
+    source: 'all', // Plataforma: youtube, kick, twitch, all
     talent: 'all',
     searchQuery: '',
     dateStart: null,
@@ -86,14 +87,33 @@ export const useDashboardStore = defineStore('dashboard', () => {
   });
 
   const availableClients = computed(() => {
-    // Filtrar clientes por plataforma seleccionada
+    // Obtener clientes únicos de todas las campañas
     const clientsSet = new Set();
-    campaignsBySource.value.forEach(campaign => {
+    campaigns.value.forEach(campaign => {
       if (campaign.NombreCliente) {
         clientsSet.add(campaign.NombreCliente);
       }
     });
     return Array.from(clientsSet).sort();
+  });
+
+  const availableCampaigns = computed(() => {
+    // Filtrar campañas por cliente seleccionado
+    let filteredCampaigns = campaigns.value;
+
+    const selectedClient = filters.value.client;
+    if (selectedClient && selectedClient !== 'all') {
+      filteredCampaigns = filteredCampaigns.filter(c => c.NombreCliente === selectedClient);
+    }
+
+    // Obtener nombres de campaña únicos
+    const campaignsSet = new Set();
+    filteredCampaigns.forEach(campaign => {
+      if (campaign.NombreCampana) {
+        campaignsSet.add(campaign.NombreCampana);
+      }
+    });
+    return Array.from(campaignsSet).sort();
   });
 
   // Acciones
@@ -110,8 +130,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   function resetFilters() {
     filters.value = {
-      source: 'all',
       client: 'all',
+      campaign: 'all',
+      source: 'all',
       talent: 'all',
       searchQuery: '',
       dateStart: null,
@@ -144,6 +165,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     // Computed
     availableTalents,
     availableClients,
+    availableCampaigns,
     // Acciones
     setCampaigns,
     setFilters,

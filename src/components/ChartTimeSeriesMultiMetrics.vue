@@ -52,7 +52,7 @@
         <p>No data for selected month</p>
       </div>
       <div v-else-if="chartData.datasets.length === 0" class="no-data-message">
-        <p>Activa al menos una métrica para ver el gráfico</p>
+        <p>Enable at least one metric to view the chart</p>
       </div>
     </div>
   </div>
@@ -669,8 +669,8 @@ const formatDateKey = (date) => {
 const formatDateLabel = (dateKey) => {
   const [year, month, day] = dateKey.split('-');
   const monthNames = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
   const monthIndex = parseInt(month) - 1;
   const dayNum = parseInt(day);
@@ -805,8 +805,8 @@ const createChart = () => {
                   const dateKey = dateKeys[dataIndex];
                   const [year, month, day] = dateKey.split('-');
                   const monthNames = [
-                    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
                   ];
                   const monthIndex = parseInt(month) - 1;
                   return `${day} ${monthNames[monthIndex]} ${year}`;
@@ -832,19 +832,19 @@ const createChart = () => {
                     if (clients.length === 1) {
                       const client = clients[0];
                       return [
-                        `Cliente: ${client.cliente}`,
-                        `Talento: ${client.talento}`
+                        `Client: ${client.cliente}`,
+                        `Talent: ${client.talento}`
                       ];
                     } else if (clients.length <= 3) {
                       // Mostrar todos si hay 3 o menos
-                      return clients.map(c => `Cliente: ${c.cliente} | Talento: ${c.talento}`);
+                      return clients.map(c => `Client: ${c.cliente} | Talent: ${c.talento}`);
                     } else {
                       // Si hay más de 3, mostrar solo el primero
                       const client = clients[0];
                       return [
-                        `Cliente: ${client.cliente}`,
-                        `Talento: ${client.talento}`,
-                        `(+${clients.length - 1} más)`
+                        `Client: ${client.cliente}`,
+                        `Talent: ${client.talento}`,
+                        `(+${clients.length - 1} more)`
                       ];
                     }
                   }

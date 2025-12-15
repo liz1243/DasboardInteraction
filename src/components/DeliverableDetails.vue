@@ -3,7 +3,7 @@
     <div class="details-header">
       <div class="header-info">
         <div class="header-title-section">
-          <h4 class="details-title">{{ deliverable.Tituloentregable || 'Entregable' }}</h4>
+          <h4 class="details-title">{{ deliverable.Tituloentregable || 'Deliverable' }}</h4>
           <div class="header-badges">
             <span class="badge badge-outline">Stream</span>
             <span class="badge badge-secondary">
@@ -17,7 +17,7 @@
           <span class="meta-item">Published: {{ formatDateShort(deliverable.entregables_fecha) }}</span>
         </div>
       </div>
-      <button @click="$emit('close')" class="btn-close" type="button">
+      <button @click="emit('close')" class="btn-close" type="button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -59,9 +59,22 @@
       </template>
     </div>
 
-    <!-- Timeline Chart -->
+    <!-- Timeline Chart with Timeframe Selector -->
     <div class="chart-card chart-full">
-      <h4 class="chart-title">Timeline: Published vs FTDs Generated</h4>
+      <div class="chart-header">
+        <h4 class="chart-title">Conversion Timeline: Clicks → Registrations → Conversions</h4>
+        <div class="timeframe-selector">
+          <button
+            v-for="tf in timeframes"
+            :key="tf.value"
+            @click="selectedTimeframe = tf.value"
+            :class="['timeframe-btn', { 'timeframe-btn-active': selectedTimeframe === tf.value }]"
+            type="button"
+          >
+            {{ tf.label }}
+          </button>
+        </div>
+      </div>
       <div class="chart-wrapper">
         <canvas ref="timelineChartCanvas"></canvas>
       </div>
@@ -121,41 +134,115 @@ const dailyChartCanvas = ref(null);
 let timelineChartInstance = null;
 let dailyChartInstance = null;
 
-// Timeline data - FTDs generados después de la publicación
+// Timeframes disponibles (como en trading)
+const timeframes = [
+  { label: '1M', value: '1m' },      // 1 minute
+  { label: '5M', value: '5m' },      // 5 minutes
+  { label: '15M', value: '15m' },    // 15 minutes
+  { label: '30M', value: '30m' },    // 30 minutes
+  { label: '1H', value: '1h' },      // 1 hour
+  { label: '4H', value: '4h' },      // 4 hours
+  { label: '1D', value: '1d' },      // 1 day
+  { label: '1W', value: '1w' },      // 1 week
+  { label: '1Mo', value: '1mo' },    // 1 month
+  { label: 'All', value: 'lifetime' } // Lifetime
+];
+
+const selectedTimeframe = ref('1d'); // Default to 1 day
+
+// Timeline data - Conversiones, Registros y Clicks generados después de la publicación
 const timelineData = computed(() => {
   const publishDate = new Date(props.deliverable.entregables_fecha);
   if (isNaN(publishDate.getTime())) return [];
-  
-  const totalFTDs = parseInt(props.deliverable.FTDObtenido) || 0;
+
+  const totalConversions = parseInt(props.deliverable.FTDObtenido) || 0;
+  const totalRegistrations = parseInt(props.deliverable.Registros) || totalConversions * 2.5;
+  const totalClicks = parseInt(props.deliverable.Clicks) || totalConversions * 10;
+
+  // Determinar el número de puntos basado en el timeframe
+  let dataPoints = 0;
+  let labelPrefix = '';
+
+  switch (selectedTimeframe.value) {
+    case '1m':
+      dataPoints = 60;
+      labelPrefix = 'Min';
+      break;
+    case '5m':
+      dataPoints = 48; // 4 hours
+      labelPrefix = '5Min';
+      break;
+    case '15m':
+      dataPoints = 48; // 12 hours
+      labelPrefix = '15Min';
+      break;
+    case '30m':
+      dataPoints = 48; // 24 hours
+      labelPrefix = '30Min';
+      break;
+    case '1h':
+      dataPoints = 48; // 2 days
+      labelPrefix = 'Hour';
+      break;
+    case '4h':
+      dataPoints = 42; // 1 week
+      labelPrefix = '4H';
+      break;
+    case '1d':
+      dataPoints = 30; // 30 days
+      labelPrefix = 'Day';
+      break;
+    case '1w':
+      dataPoints = 12; // 12 weeks
+      labelPrefix = 'Week';
+      break;
+    case '1mo':
+      dataPoints = 12; // 12 months
+      labelPrefix = 'Month';
+      break;
+    case 'lifetime':
+      dataPoints = 30; // 30 periods
+      labelPrefix = 'Period';
+      break;
+    default:
+      dataPoints = 15;
+      labelPrefix = 'Day';
+  }
+
   const timeline = [];
-  let cumulative = 0;
-  
-  for (let i = 0; i <= 14; i++) {
-    let ftdCount = 0;
-    if (i === 0) ftdCount = Math.floor(totalFTDs * 0.35);
-    else if (i === 1) ftdCount = Math.floor(totalFTDs * 0.25);
-    else if (i === 2) ftdCount = Math.floor(totalFTDs * 0.15);
-    else if (i <= 7) ftdCount = Math.floor(totalFTDs * 0.05);
-    else ftdCount = Math.floor(totalFTDs * 0.01);
-    
-    cumulative += ftdCount;
-    
+  let cumulativeConversions = 0;
+  let cumulativeRegistrations = 0;
+  let cumulativeClicks = 0;
+
+  for (let i = 0; i < dataPoints; i++) {
+    // Distribución exponencial decreciente para simular conversiones reales
+    let conversionRate = 0;
+    if (i === 0) conversionRate = 0.35;
+    else if (i === 1) conversionRate = 0.25;
+    else if (i === 2) conversionRate = 0.15;
+    else if (i <= 7) conversionRate = 0.05 / 5;
+    else conversionRate = 0.20 / (dataPoints - 8);
+
+    const conversions = Math.floor(totalConversions * conversionRate);
+    const registrations = Math.floor(totalRegistrations * conversionRate);
+    const clicks = Math.floor(totalClicks * conversionRate);
+
+    cumulativeConversions += conversions;
+    cumulativeRegistrations += registrations;
+    cumulativeClicks += clicks;
+
     timeline.push({
-      day: `Día ${i}`,
-      ftds: ftdCount,
-      cumulative: cumulative
+      label: `${labelPrefix} ${i}`,
+      conversions: conversions,
+      registrations: registrations,
+      clicks: clicks,
+      cumulativeConversions: cumulativeConversions,
+      cumulativeRegistrations: cumulativeRegistrations,
+      cumulativeClicks: cumulativeClicks
     });
   }
-  
-  return timeline;
-});
 
-// Match Score - FTDs dentro de los primeros 3 días
-const matchScore = computed(() => {
-  const ftdsWithin3Days = timelineData.value.slice(0, 4).reduce((sum, d) => sum + d.ftds, 0);
-  const totalFTDs = parseInt(props.deliverable.FTDObtenido) || 0;
-  if (totalFTDs === 0) return '0.0';
-  return ((ftdsWithin3Days / totalFTDs) * 100).toFixed(1);
+  return timeline;
 });
 
 // Daily distribution data (primeros 8 días)
@@ -168,20 +255,6 @@ const formatNumber = (value) => {
   return num.toLocaleString('en-US');
 };
 
-const formatDate = (date) => {
-  if (!date) return '-';
-  try {
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) return date;
-    return dateObj.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  } catch {
-    return date;
-  }
-};
 
 const extractPlatform = (url) => {
   if (!url) return '-';
@@ -190,7 +263,7 @@ const extractPlatform = (url) => {
   if (url.includes('youtube')) return 'YouTube';
   if (url.includes('instagram')) return 'Instagram';
   if (url.includes('tiktok')) return 'TikTok';
-  return 'Otra plataforma';
+  return 'Other Platform';
 };
 
 // Determinar si es YouTube basándose en source o PlataformaTalento
@@ -241,45 +314,13 @@ const calculateEngagement = (deliverable) => {
   return '0.00';
 };
 
-const getPlatformIcon = (url) => {
-  if (!url) return '📺';
-  if (url.includes('kick.com')) return '🎮';
-  if (url.includes('twitch')) return '🎮';
-  if (url.includes('youtube')) return '📺';
-  if (url.includes('instagram')) return '📷';
-  if (url.includes('tiktok')) return '🎵';
-  return '📺';
-};
-
-const calculateLikeRate = (deliverable) => {
-  if (!showYouTubeMetrics.value) return '-';
-  const views = parseInt(deliverable.Views) || 0;
-  const likes = parseInt(deliverable.Likes) || 0;
-  if (views === 0) return '0.00';
-  return ((likes / views) * 100).toFixed(2);
-};
-
-const calculateCommentRate = (deliverable) => {
-  if (!showYouTubeMetrics.value) return '-';
-  const views = parseInt(deliverable.Views) || 0;
-  const comments = parseInt(deliverable.Comments) || 0;
-  if (views === 0) return '0.00';
-  return ((comments / views) * 100).toFixed(2);
-};
-
-const calculateFTDConversion = (deliverable) => {
-  const views = parseInt(deliverable.Views) || 0;
-  const ftds = parseInt(deliverable.FTDObtenido) || 0;
-  if (views === 0) return '0.000';
-  return ((ftds / views) * 100).toFixed(3);
-};
 
 const formatDateShort = (date) => {
   if (!date) return '-';
   try {
     const dateObj = new Date(date);
     if (isNaN(dateObj.getTime())) return date;
-    return dateObj.toLocaleDateString('es-ES', {
+    return dateObj.toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -287,14 +328,6 @@ const formatDateShort = (date) => {
   } catch {
     return date;
   }
-};
-
-const truncateTitle = (title) => {
-  if (!title) return '-';
-  if (title.length > 50) {
-    return title.substring(0, 47) + '...';
-  }
-  return title;
 };
 
 // Crear gráfico de timeline
@@ -324,41 +357,55 @@ const createTimelineChart = () => {
   const styles = getComputedStyle(document.documentElement);
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#dfe3ec';
   const yellow = styles.getPropertyValue('--accent-primary').trim() || '#fdc600';
-  const yellowRgb = styles.getPropertyValue('--accent-primary-rgb').trim() || '253, 198, 0';
-  const yellowLight = styles.getPropertyValue('--chart-comments').trim() || '#ffd54d';
-  const yellowLightRgb = styles.getPropertyValue('--chart-comments-rgb').trim() || '255, 213, 77';
+  const cyan = styles.getPropertyValue('--accent-cyan').trim() || '#00eaff';
+  const pink = styles.getPropertyValue('--accent-pink').trim() || '#ff6b9d';
 
   timelineChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: timelineData.value.map(d => d.day),
+      labels: timelineData.value.map(d => d.label),
       datasets: [
         {
-          label: 'FTDs por día',
-          data: timelineData.value.map(d => d.ftds),
+          label: 'Clicks',
+          data: timelineData.value.map(d => d.clicks),
+          borderColor: cyan,
+          backgroundColor: cyan,
+          pointBackgroundColor: cyan,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: false,
+          tension: 0.4,
+          borderWidth: 2
+        },
+        {
+          label: 'Registrations',
+          data: timelineData.value.map(d => d.registrations),
           borderColor: yellow,
           backgroundColor: yellow,
           pointBackgroundColor: yellow,
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: 3,
+          pointHoverRadius: 5,
           fill: false,
-          tension: 0.4
+          tension: 0.4,
+          borderWidth: 2
         },
         {
-          label: 'FTDs acumulados',
-          data: timelineData.value.map(d => d.cumulative),
-          borderColor: yellowLight,
-          backgroundColor: yellowLight,
-          pointBackgroundColor: yellowLight,
+          label: 'Conversions',
+          data: timelineData.value.map(d => d.conversions),
+          borderColor: pink,
+          backgroundColor: pink,
+          pointBackgroundColor: pink,
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          borderDash: [5, 5],
+          pointRadius: 3,
+          pointHoverRadius: 5,
           fill: false,
-          tension: 0.4
+          tension: 0.4,
+          borderWidth: 2
         }
       ]
     },
@@ -424,10 +471,10 @@ const createDailyChart = () => {
   dailyChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: dailyData.value.map(d => d.day),
+      labels: dailyData.value.map(d => d.label),
       datasets: [{
-        label: 'FTDs',
-        data: dailyData.value.map(d => d.ftds),
+        label: 'Conversions',
+        data: dailyData.value.map(d => d.conversions),
         backgroundColor: yellow,
         borderColor: yellow,
         borderWidth: 2,
@@ -463,7 +510,7 @@ const createDailyChart = () => {
   });
 };
 
-watch([timelineData, dailyData], () => {
+watch([timelineData, dailyData, selectedTimeframe], () => {
   setTimeout(() => {
     createTimelineChart();
     createDailyChart();
@@ -665,6 +712,47 @@ onBeforeUnmount(() => {
 .chart-wrapper {
   height: 300px;
   position: relative;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.timeframe-selector {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.timeframe-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeframe-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.timeframe-btn-active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--color-black);
 }
 
 .match-score-info {

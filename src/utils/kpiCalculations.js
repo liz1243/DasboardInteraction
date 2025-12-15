@@ -16,8 +16,22 @@ export function getPlatformFromUrl(url) {
  */
 export function filterCampaigns(campaigns, filters) {
   if (!campaigns || campaigns.length === 0) return [];
-  
+
   let filtered = [...campaigns];
+
+  // Filtro por Cliente
+  if (filters.client && filters.client !== 'all') {
+    filtered = filtered.filter(campaign =>
+      campaign.NombreCliente === filters.client
+    );
+  }
+
+  // Filtro por Campaña
+  if (filters.campaign && filters.campaign !== 'all') {
+    filtered = filtered.filter(campaign =>
+      campaign.NombreCampana === filters.campaign
+    );
+  }
 
   // Filtro por Plataforma (Source)
   if (filters.source && filters.source !== 'all') {
@@ -29,15 +43,8 @@ export function filterCampaigns(campaigns, filters) {
 
   // Filtro por Talento
   if (filters.talent && filters.talent !== 'all') {
-    filtered = filtered.filter(campaign => 
+    filtered = filtered.filter(campaign =>
       campaign.NombreTalento === filters.talent
-    );
-  }
-
-  // Filtro por Cliente
-  if (filters.client && filters.client !== 'all') {
-    filtered = filtered.filter(campaign => 
-      campaign.NombreCliente === filters.client
     );
   }
 

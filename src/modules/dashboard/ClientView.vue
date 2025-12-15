@@ -154,9 +154,11 @@
 
       <!-- Tabla de campañas -->
       <div class="table-section">
-        <TableCampaign 
+        <TableCampaign
           :campaigns="filteredCampaigns"
           :search-query="dashboardStore.filters.searchQuery"
+          :date-start="dashboardStore.filters.dateStart"
+          :date-end="dashboardStore.filters.dateEnd"
           @update-search="handleSearchUpdate"
         />
       </div>

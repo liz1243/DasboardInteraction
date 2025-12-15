@@ -4,7 +4,8 @@
  */
 
 // URL de la API de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFvwGG2SylsmfsqaFiSn6wKwIvZOudgjbFFJDXmgOvh863vTQEqCJLEV5mH7KobpUAXQ/exec';
+const GOOGLE_APPS_SCRIPT_URL ='https://script.google.com/macros/s/AKfycbwvdZbqqTaaP-zi9nHkrd_jckMuRWC0QkZFxO9ayfaEZDszqLOWEIFm6WWjdf2TXPE/exec'; 
+//'https://script.google.com/macros/s/AKfycbzFvwGG2SylsmfsqaFiSn6wKwIvZOudgjbFFJDXmgOvh863vTQEqCJLEV5mH7KobpUAXQ/exec';
 
 /**
  * Transforma los datos de la API (formato anidado) al formato plano esperado
@@ -42,13 +43,18 @@ const transformApiData = (apiResponse) => {
           Views: entregable.Views || entregable['Peak Viewers'] || 0,
           Likes: entregable.Likes || 0,
           Comments: entregable.Comments || 0,
-          // Nuevos campos de monetización
-          CPA: entregable.CPAobtenido || 0,
+          // Nuevos campos de monetización del entregable
+          CPA: entregable.cpa || entregable.CPAObtenido || entregable.CPAobtenido || 0,
           Revenue: entregable.NRG || 0,
-          Deposits: entregable.Deposito || 0,
+          Deposits: entregable.Deposito_timestamp || entregable.Deposito || 0,
           FTDActual: entregable.FTDActual || 0,
           Presupuesto: entregable.Presupuesto || 0,
-          FTDobjetivo: entregable.FTDobjetivo || 0
+          PrecioVenta: entregable.precio_venta || 0,
+          PrecioVentaEntregable: entregable.PrecioVentaxEntegable || 0,
+          FTDobjetivo: entregable.FTDobjetivo || 0,
+          // Campos de conversión
+          Registros: entregable.Registro_timestamp || 0,
+          Clicks: entregable.FTD_timestamp || 0
         });
       });
     } else {

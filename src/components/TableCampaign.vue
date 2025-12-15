@@ -27,6 +27,31 @@
       </div>
     </div>
 
+    <!-- Active Filters Indicator -->
+    <div v-if="hasActiveFilters" class="active-filters">
+      <div class="filter-chips">
+        <span class="filter-label">Active filters:</span>
+        <span v-if="dateStart || dateEnd" class="filter-chip filter-chip-global">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Global: {{ formatDateFilterChip() }}
+        </span>
+        <span v-if="localDateStart || localDateEnd" class="filter-chip filter-chip-table">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Table: {{ formatLocalDateFilterChip() }}
+        </span>
+      </div>
+    </div>
+
     <!-- Search and Controls -->
     <div class="table-controls">
       <div class="search-box">
@@ -43,6 +68,46 @@
         />
       </div>
 
+      <!-- Date Range Filter for Table -->
+      <div class="table-date-filters">
+        <div class="date-filter-group">
+          <label for="table-date-start">From:</label>
+          <div class="date-input-wrapper-inline">
+            <input
+              id="table-date-start"
+              type="date"
+              v-model="localDateStart"
+              @change="handleDateFilterChange"
+              class="input-date-inline"
+            />
+          </div>
+        </div>
+        <div class="date-filter-group">
+          <label for="table-date-end">To:</label>
+          <div class="date-input-wrapper-inline">
+            <input
+              id="table-date-end"
+              type="date"
+              v-model="localDateEnd"
+              @change="handleDateFilterChange"
+              :min="localDateStart || ''"
+              class="input-date-inline"
+            />
+          </div>
+        </div>
+        <button
+          v-if="localDateStart || localDateEnd"
+          @click="clearTableDateFilters"
+          class="btn-clear-dates"
+          type="button"
+          title="Clear date filters"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
     </div>
     
     <div v-if="sortedCampaigns.length === 0" class="empty-state">
@@ -263,6 +328,14 @@ const props = defineProps({
   searchQuery: {
     type: String,
     default: ''
+  },
+  dateStart: {
+    type: String,
+    default: null
+  },
+  dateEnd: {
+    type: String,
+    default: null
   }
 });
 
@@ -276,21 +349,59 @@ const itemsPerPage = ref(10);
 const selectedDeliverable = ref(null);
 const deliveryDetailsRef = ref(null);
 
-// Computed - Campañas filtradas por búsqueda
+// Filtros de fecha locales (solo para la tabla)
+const localDateStart = ref(null);
+const localDateEnd = ref(null);
+
+// Computed - Campañas filtradas por búsqueda y fechas locales
 const filteredCampaigns = computed(() => {
-  if (!localSearchQuery.value.trim()) {
-    return props.campaigns;
+  let filtered = props.campaigns;
+
+  // Filtrar por búsqueda
+  if (localSearchQuery.value.trim()) {
+    const query = localSearchQuery.value.toLowerCase().trim();
+    filtered = filtered.filter(campaign => {
+      return (
+        (campaign.NombreCampana && campaign.NombreCampana.toLowerCase().includes(query)) ||
+        (campaign.NombreCliente && campaign.NombreCliente.toLowerCase().includes(query)) ||
+        (campaign.NombreTalento && campaign.NombreTalento.toLowerCase().includes(query)) ||
+        (campaign.entregables_URL && campaign.entregables_URL.toLowerCase().includes(query))
+      );
+    });
   }
-  
-  const query = localSearchQuery.value.toLowerCase().trim();
-  return props.campaigns.filter(campaign => {
-    return (
-      (campaign.NombreCampana && campaign.NombreCampana.toLowerCase().includes(query)) ||
-      (campaign.NombreCliente && campaign.NombreCliente.toLowerCase().includes(query)) ||
-      (campaign.NombreTalento && campaign.NombreTalento.toLowerCase().includes(query)) ||
-      (campaign.entregables_URL && campaign.entregables_URL.toLowerCase().includes(query))
-    );
-  });
+
+  // Filtrar por rango de fechas local (solo para la tabla)
+  if (localDateStart.value || localDateEnd.value) {
+    filtered = filtered.filter(campaign => {
+      if (!campaign.entregables_fecha) return false;
+
+      const campaignDateStr = campaign.entregables_fecha.toString().trim();
+      const dateMatch = campaignDateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+      if (!dateMatch) return false;
+
+      const year = parseInt(dateMatch[1], 10);
+      const month = parseInt(dateMatch[2], 10);
+      const day = parseInt(dateMatch[3], 10);
+      const campaignDate = new Date(year, month - 1, day);
+
+      if (localDateStart.value) {
+        const startDate = new Date(localDateStart.value);
+        startDate.setHours(0, 0, 0, 0);
+        if (campaignDate < startDate) return false;
+      }
+
+      if (localDateEnd.value) {
+        const endDate = new Date(localDateEnd.value);
+        endDate.setHours(23, 59, 59, 999);
+        if (campaignDate > endDate) return false;
+      }
+
+      return true;
+    });
+  }
+
+  return filtered;
 });
 
 // Computed - Campañas ordenadas
@@ -650,6 +761,22 @@ const handleSearch = () => {
   currentPage.value = 1;
 };
 
+const handleDateFilterChange = () => {
+  // Validar que la fecha de fin sea mayor o igual a la de inicio
+  if (localDateStart.value && localDateEnd.value) {
+    if (localDateEnd.value < localDateStart.value) {
+      localDateEnd.value = null;
+    }
+  }
+  currentPage.value = 1;
+};
+
+const clearTableDateFilters = () => {
+  localDateStart.value = null;
+  localDateEnd.value = null;
+  currentPage.value = 1;
+};
+
 const handleSort = () => {
   currentPage.value = 1;
 };
@@ -744,6 +871,57 @@ const getCampaignId = (campaign) => {
   return campaign.entregables_URL || `${campaign.NombreCampana}-${campaign.NombreCliente}-${campaign.entregables_fecha}`;
 };
 
+// Computed - Verificar si hay filtros activos (global o local)
+const hasActiveFilters = computed(() => {
+  return !!(props.dateStart || props.dateEnd || localDateStart.value || localDateEnd.value);
+});
+
+// Formatear el chip de filtro de fecha global
+const formatDateFilterChip = () => {
+  if (!props.dateStart && !props.dateEnd) return '';
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  if (props.dateStart && props.dateEnd) {
+    return `${formatDate(props.dateStart)} - ${formatDate(props.dateEnd)}`;
+  } else if (props.dateStart) {
+    return `From ${formatDate(props.dateStart)}`;
+  } else if (props.dateEnd) {
+    return `Until ${formatDate(props.dateEnd)}`;
+  }
+  return '';
+};
+
+// Formatear el chip de filtro de fecha local (tabla)
+const formatLocalDateFilterChip = () => {
+  if (!localDateStart.value && !localDateEnd.value) return '';
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  if (localDateStart.value && localDateEnd.value) {
+    return `${formatDate(localDateStart.value)} - ${formatDate(localDateEnd.value)}`;
+  } else if (localDateStart.value) {
+    return `From ${formatDate(localDateStart.value)}`;
+  } else if (localDateEnd.value) {
+    return `Until ${formatDate(localDateEnd.value)}`;
+  }
+  return '';
+};
+
 </script>
 
 <style scoped>
@@ -807,6 +985,46 @@ const getCampaignId = (campaign) => {
   color: var(--accent-green);
 }
 
+.active-filters {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(var(--accent-primary-rgb), 0.05);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.2);
+  border-radius: var(--radius-md);
+}
+
+.filter-chips {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.25rem 0.75rem;
+  background: var(--accent-primary);
+  color: var(--color-black);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.filter-chip svg {
+  flex-shrink: 0;
+}
+
 .table-controls {
   display: flex;
   justify-content: space-between;
@@ -819,9 +1037,112 @@ const getCampaignId = (campaign) => {
 .search-box {
   flex: 1;
   min-width: 250px;
+  max-width: 400px;
   position: relative;
   display: flex;
   align-items: center;
+}
+
+.table-date-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.date-filter-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.date-input-wrapper-inline {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.calendar-icon-inline {
+  position: absolute;
+  left: var(--spacing-xs);
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+  transition: color var(--transition-fast);
+}
+
+.date-input-wrapper-inline:hover .calendar-icon-inline {
+  color: var(--accent-primary);
+}
+
+.input-date-inline {
+  width: 150px;
+  padding: 0.375rem 0.5rem 0.375rem 28px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.input-date-inline:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-card);
+}
+
+.input-date-inline:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1);
+  background: var(--bg-card);
+}
+
+.input-date-inline::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+}
+
+.input-date-inline::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.btn-clear-dates {
+  padding: 0.375rem 0.5rem;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: var(--radius-sm);
+  color: #ff6b6b;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-clear-dates:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: #ff6b6b;
+}
+
+.filter-chip-global {
+  background: var(--accent-primary);
+  color: var(--color-black);
+}
+
+.filter-chip-table {
+  background: var(--accent-cyan);
+  color: var(--color-black);
 }
 
 .search-box svg {
@@ -1207,6 +1528,20 @@ const getCampaignId = (campaign) => {
 
   .search-box {
     min-width: 100%;
+    max-width: 100%;
+  }
+
+  .table-date-filters {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .date-filter-group {
+    flex: 1;
+  }
+
+  .input-date-inline {
+    width: 100%;
   }
 }
 

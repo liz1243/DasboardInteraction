@@ -2,57 +2,6 @@
   <div class="filters-row" v-if="hasData">
     <div class="filters-row-container">
       <div class="filters-buttons">
-        <!-- Botón Plataforma (Source) -->
-        <div v-if="!disablePlatformFilter" class="filter-button-group">
-          <button 
-            @click="toggleDropdown('source')"
-            :class="['filter-btn', { 'filter-btn-active': localFilters.source !== 'all' }]"
-            type="button"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-            </svg>
-            <span>Platform</span>
-            <span v-if="localFilters.source !== 'all'" class="filter-badge">
-              {{ getPlatformLabel(localFilters.source) }}
-            </span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <div v-if="activeDropdown === 'source'" class="dropdown-menu">
-            <button 
-              @click="selectFilter('source', 'all')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'all' }]"
-              type="button"
-            >
-              All platforms
-            </button>
-            <button
-              @click="selectFilter('source', 'youtube')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'youtube' }]"
-              type="button"
-            >
-              YouTube
-            </button>
-            <button
-              @click="selectFilter('source', 'kick')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'kick' }]"
-              type="button"
-            >
-              Kick
-            </button>
-            <button
-              @click="selectFilter('source', 'twitch')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'twitch' }]"
-              type="button"
-            >
-              Twitch
-            </button>
-          </div>
-        </div>
-
         <!-- Botón Cliente -->
         <div class="filter-button-group">
           <button 
@@ -90,6 +39,97 @@
               type="button"
             >
               {{ client }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Botón Campaña -->
+        <div class="filter-button-group">
+          <button
+            @click="toggleDropdown('campaign')"
+            :class="['filter-btn', { 'filter-btn-active': localFilters.campaign !== 'all' }]"
+            :disabled="localFilters.client === 'all'"
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span>Campaign</span>
+            <span v-if="localFilters.campaign !== 'all'" class="filter-badge">
+              {{ localFilters.campaign }}
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div v-if="activeDropdown === 'campaign'" class="dropdown-menu">
+            <button
+              @click="selectFilter('campaign', 'all')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.campaign === 'all' }]"
+              type="button"
+            >
+              All campaigns
+            </button>
+            <button
+              v-for="campaign in availableCampaigns"
+              :key="campaign"
+              @click="selectFilter('campaign', campaign)"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.campaign === campaign }]"
+              type="button"
+            >
+              {{ campaign }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Botón Plataforma (Source) -->
+        <div v-if="!disablePlatformFilter" class="filter-button-group">
+          <button
+            @click="toggleDropdown('source')"
+            :class="['filter-btn', { 'filter-btn-active': localFilters.source !== 'all' }]"
+            type="button"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span>Platform</span>
+            <span v-if="localFilters.source !== 'all'" class="filter-badge">
+              {{ getPlatformLabel(localFilters.source) }}
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div v-if="activeDropdown === 'source'" class="dropdown-menu">
+            <button
+              @click="selectFilter('source', 'all')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'all' }]"
+              type="button"
+            >
+              All platforms
+            </button>
+            <button
+              @click="selectFilter('source', 'youtube')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'youtube' }]"
+              type="button"
+            >
+              YouTube
+            </button>
+            <button
+              @click="selectFilter('source', 'kick')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'kick' }]"
+              type="button"
+            >
+              Kick
+            </button>
+            <button
+              @click="selectFilter('source', 'twitch')"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'twitch' }]"
+              type="button"
+            >
+              Twitch
             </button>
           </div>
         </div>
@@ -158,32 +198,53 @@
             <div class="dropdown-dates">
               <div class="date-input-group">
                 <label for="date-start">Start Date</label>
-                <input
-                  id="date-start"
-                  type="date"
-                  class="input-date"
-                  :value="localFilters.dateStart || ''"
-                  @change="updateDateFilter('dateStart', $event.target.value)"
-                />
+                <div class="date-input-wrapper">
+                  <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <input
+                    id="date-start"
+                    type="date"
+                    class="input-date"
+                    :value="localFilters.dateStart || ''"
+                    @change="updateDateFilter('dateStart', $event.target.value)"
+                    placeholder="Select start date"
+                  />
+                </div>
               </div>
               <div class="date-input-group">
                 <label for="date-end">End Date</label>
-                <input
-                  id="date-end"
-                  type="date"
-                  class="input-date"
-                  :value="localFilters.dateEnd || ''"
-                  @change="updateDateFilter('dateEnd', $event.target.value)"
-                  :min="localFilters.dateStart || ''"
-                />
+                <div class="date-input-wrapper">
+                  <svg class="calendar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <input
+                    id="date-end"
+                    type="date"
+                    class="input-date"
+                    :value="localFilters.dateEnd || ''"
+                    @change="updateDateFilter('dateEnd', $event.target.value)"
+                    :min="localFilters.dateStart || ''"
+                    placeholder="Select end date"
+                  />
+                </div>
               </div>
               <button
                 v-if="hasDateFilters"
                 @click="clearDateFilters"
-                class="dropdown-item"
+                class="dropdown-item clear-dates-btn"
                 type="button"
-                style="margin-top: var(--spacing-xs);"
               >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
                 Clear dates
               </button>
             </div>
@@ -212,8 +273,6 @@
 </template>
 
 <script setup>
-import { useDashboardStore } from '@/modules/dashboard/dashboardStore.js';
-import { getClientRoute } from '@/utils/routeHelpers.js';
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 
 const props = defineProps({
@@ -222,6 +281,10 @@ const props = defineProps({
     required: true
   },
   availableClients: {
+    type: Array,
+    default: () => []
+  },
+  availableCampaigns: {
     type: Array,
     default: () => []
   },
@@ -248,8 +311,9 @@ const hasData = computed(() => {
 });
 
 const hasActiveFilters = computed(() => {
-  return localFilters.value.source !== 'all' ||
-         localFilters.value.client !== 'all' ||
+  return localFilters.value.client !== 'all' ||
+         localFilters.value.campaign !== 'all' ||
+         localFilters.value.source !== 'all' ||
          localFilters.value.talent !== 'all' ||
          hasDateFilters.value;
 });
@@ -275,26 +339,28 @@ watch(() => props.filters, (newFilters) => {
   };
 }, { deep: true });
 
-// Si cambia la plataforma, cliente o la lista de talentos, resetear filtros si no son válidos
+// Si cambian los filtros o las listas disponibles, resetear filtros inválidos
 watch(
-  () => [props.availableTalents, localFilters.value.client, localFilters.value.source],
+  () => [props.availableTalents, props.availableCampaigns, localFilters.value.client, localFilters.value.campaign],
   (newVal, oldVal) => {
-    // Si cambió la plataforma, el cliente o la lista de talentos disponibles
-    const sourceChanged = oldVal && oldVal[2] !== newVal[2];
-    const clientChanged = oldVal && oldVal[1] !== newVal[1];
-    const talentsChanged = oldVal && oldVal[0] !== newVal[0];
-    
-    if (sourceChanged) {
-      // Si cambió la plataforma, resetear cliente y talento
-      if (localFilters.value.client !== 'all') {
-        localFilters.value.client = 'all';
+    if (!oldVal) return;
+
+    const clientChanged = oldVal[2] !== newVal[2];
+    const campaignChanged = oldVal[3] !== newVal[3];
+
+    if (clientChanged) {
+      // Si cambió el cliente, resetear campaign si no está en la nueva lista
+      if (
+        localFilters.value.campaign !== 'all' &&
+        !props.availableCampaigns.includes(localFilters.value.campaign)
+      ) {
+        localFilters.value.campaign = 'all';
+        updateFilters();
       }
-      if (localFilters.value.talent !== 'all') {
-        localFilters.value.talent = 'all';
-      }
-      updateFilters();
-    } else if (clientChanged || talentsChanged) {
-      // Si hay un talento seleccionado que no está en la nueva lista, resetearlo
+    }
+
+    if (campaignChanged) {
+      // Si cambió la campaña, resetear talent si no está en la nueva lista
       if (
         localFilters.value.talent !== 'all' &&
         !props.availableTalents.includes(localFilters.value.talent)
@@ -315,36 +381,32 @@ const closeDropdown = () => {
   activeDropdown.value = null;
 };
 
-const dashboardStore = useDashboardStore();
-
 const selectFilter = async (key, value) => {
   localFilters.value[key] = value;
-  
-  // Si se selecciona una plataforma, resetear cliente y talento
-  if (key === 'source') {
-    localFilters.value.client = 'all';
+
+  // Cascada de filtros según el orden: Cliente -> Campaña -> Plataforma -> Talento
+  if (key === 'client') {
+    // Si se selecciona un cliente, resetear campaign, source y talent
+    localFilters.value.campaign = 'all';
+    localFilters.value.source = 'all';
     localFilters.value.talent = 'all';
     updateFilters();
     await nextTick();
-  }
-  // Si se selecciona un cliente, resetear el talento si no es válido para ese cliente
-  else if (key === 'client') {
-    // Actualizar filtros primero para que availableTalents se actualice
+  } else if (key === 'campaign') {
+    // Si se selecciona una campaña, resetear source y talent
+    localFilters.value.source = 'all';
+    localFilters.value.talent = 'all';
     updateFilters();
-    
-    // Esperar a que availableTalents se actualice en el siguiente tick
     await nextTick();
-    if (
-      localFilters.value.talent !== 'all' &&
-      !props.availableTalents.includes(localFilters.value.talent)
-    ) {
-      localFilters.value.talent = 'all';
-      updateFilters();
-    }
+  } else if (key === 'source') {
+    // Si se selecciona una plataforma, resetear talent
+    localFilters.value.talent = 'all';
+    updateFilters();
+    await nextTick();
   } else {
     updateFilters();
   }
-  
+
   closeDropdown();
 };
 
@@ -402,8 +464,9 @@ const formatDateRange = () => {
 const clearAllFilters = () => {
   localFilters.value = {
     ...localFilters.value,
-    source: 'all',
     client: 'all',
+    campaign: 'all',
+    source: 'all',
     talent: 'all',
     dateStart: null,
     dateEnd: null
@@ -612,15 +675,42 @@ onUnmounted(() => {
   letter-spacing: 0.5px;
 }
 
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.calendar-icon {
+  position: absolute;
+  left: var(--spacing-sm);
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+  transition: color var(--transition-fast);
+}
+
+.date-input-wrapper:hover .calendar-icon {
+  color: var(--accent-primary);
+}
+
 .input-date,
 .input-number {
-  padding: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 40px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 0.875rem;
+  font-family: inherit;
   transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.input-date:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-card);
 }
 
 .input-date:focus,
@@ -628,6 +718,34 @@ onUnmounted(() => {
   outline: none;
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1);
+  background: var(--bg-card);
+}
+
+.input-date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+}
+
+.input-date::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.clear-dates-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  justify-content: center;
+  margin-top: var(--spacing-xs);
+  background: rgba(255, 107, 107, 0.1) !important;
+  border: 1px solid rgba(255, 107, 107, 0.3) !important;
+  color: #ff6b6b !important;
+  font-weight: 500;
+}
+
+.clear-dates-btn:hover {
+  background: rgba(255, 107, 107, 0.2) !important;
+  border-color: #ff6b6b !important;
 }
 
 .dropdown-overlay {

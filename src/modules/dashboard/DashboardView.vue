@@ -14,13 +14,14 @@
       <FiltersSidebar
         :filters="dashboardStore.filters"
         :available-clients="dashboardStore.availableClients"
+        :available-campaigns="dashboardStore.availableCampaigns"
         :available-talents="dashboardStore.availableTalents"
         @update-filters="handleUpdateFilters"
         @clear-filters="handleClearFilters"
       />
     </div>
     <!-- KPIs -->
-    <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0" :key="`kpis-${refreshKey}`">
+    <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0" :key="`kpis-${kpisRefreshKey}`">
       <KpiCard
         v-if="ftdsData.totalFTDs > 0"
         title="Total FTDs"
@@ -41,7 +42,7 @@
         :value="ftdsData.metaProgress"
         format="percentage"
         color="green"
-        tooltip="Percentage of cost per acquisition target achieved based on paid amount and target FTDs."
+        tooltip="Percentage of budget invested: (Real investment / Budget objective) × 100. Shows how much you've invested vs your budget."
       >
         <template #icon>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -139,9 +140,11 @@
 
     <!-- Tabla de campañas -->
     <div class="table-section">
-      <TableCampaign 
+      <TableCampaign
         :campaigns="dashboardStore.filteredCampaigns"
         :search-query="dashboardStore.filters.searchQuery"
+        :date-start="dashboardStore.filters.dateStart"
+        :date-end="dashboardStore.filters.dateEnd"
         @update-search="handleSearchUpdate"
       />
     </div>
@@ -176,12 +179,18 @@ import { fetchCampaigns } from '@/services/apiService.js';
 const dashboardStore = useDashboardStore();
 const showScrollTop = ref(false);
 
+// Key reactivo para KPIs (solo cliente)
+const kpisRefreshKey = computed(() => {
+  return dashboardStore.filters.client;
+});
+
 // Key reactivo para forzar actualización cuando cambien los filtros
 const refreshKey = computed(() => {
   const filters = dashboardStore.filters;
   return JSON.stringify({
-    source: filters.source,
     client: filters.client,
+    campaign: filters.campaign,
+    source: filters.source,
     talent: filters.talent,
     dateStart: filters.dateStart,
     dateEnd: filters.dateEnd,
@@ -210,111 +219,99 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
 });
 
-// Calculate current month
-const currentMonth = computed(() => {
-  const date = new Date();
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-});
-
-// Calcular datos de FTDs
+// Calcular datos de FTDs (solo filtrado por cliente)
 const ftdsData = computed(() => {
-  const campaigns = dashboardStore.filteredCampaigns;
-  const filters = dashboardStore.filters;
-  
-  // Total FTDs obtenidos
-  const totalFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDObtenido) || 0), 0);
-  
-  // Meta total (suma de FTDs meta)
-  const targetFTDs = campaigns.reduce((sum, c) => sum + (parseInt(c.FTDs) || 0), 0);
-  
-  // CPA Target % = (Monto pagado por la campaña / FTDs objetivo) / CPA objetivo * 100
-  // Monto pagado = TBA real * FTDs obtenidos
-  // TBA real = Presupuesto estimado / FTDs obtenidos = (FTDs objetivo * 50) / FTDs obtenidos
-  // Monto pagado real = TBA real * FTDs obtenidos = (FTDs objetivo * 50) / FTDs obtenidos * FTDs obtenidos = FTDs objetivo * 50
-  // Pero esto siempre da lo mismo. Necesitamos usar el costo real basado en FTDs obtenidos.
-  // Alternativa: Monto pagado = TBA promedio * FTDs obtenidos totales
-  let metaProgress = 0;
-  
-  const totalFTDsObjetivo = campaigns.reduce((sum, c) => {
-    return sum + (Number(c.FTDs) || 0);
-  }, 0);
-  
-  const totalFTDsObtenidos = campaigns.reduce((sum, c) => {
-    return sum + (Number(c.FTDObtenido) || 0);
-  }, 0);
+  // Filtrar solo por cliente, ignorando otros filtros para los KPIs
+  let campaigns = dashboardStore.campaigns;
 
-  // Calcular monto total pagado usando el CPA real de cada campaña
-  // Presupuesto Real = Suma de (CPA real × FTDs obtenidos) por cada campaña
-  const totalMontoPagado = campaigns.reduce((sum, c) => {
-    const cpa = parseFloat(c.CPA) || 0;
-    const ftdsObtenidos = Number(c.FTDObtenido) || 0;
-    return sum + (cpa * ftdsObtenidos);
-  }, 0);
+  const selectedClient = dashboardStore.filters.client;
+  if (selectedClient && selectedClient !== 'all') {
+    campaigns = campaigns.filter(c => c.NombreCliente === selectedClient);
+  }
 
-  // CPA Target = Monto pagado / FTDs objetivo
-  const cpaTarget = totalFTDsObjetivo > 0 ? (totalMontoPagado / totalFTDsObjetivo) : 0;
-  
-  // CPA objetivo = $50 por FTD objetivo
-  const cpaObjetivo = 50;
-  
-  // CPA Target % = (CPA Target / CPA objetivo) * 100
-  metaProgress = cpaObjetivo > 0 ? (cpaTarget / cpaObjetivo) * 100 : 0;
-  
-  // Debug: mostrar valores calculados
-  console.log('CPA Target % Calculation:', {
-    totalMontoPagado: totalMontoPagado.toFixed(2),
-    totalFTDsObjetivo,
-    totalFTDsObtenidos,
-    cpaTarget: cpaTarget.toFixed(2),
-    cpaObjetivo,
-    metaProgress: metaProgress.toFixed(2) + '%',
-    expected: cpaObjetivo > 0 ? `(${cpaTarget.toFixed(2)} / ${cpaObjetivo}) * 100 = ${metaProgress.toFixed(2)}%` : 'N/A',
-    totalCampaigns: campaigns.length
-  });
-  
-  // CPA promedio (calculado del campo CPA real de la API)
-  const totalCPA = campaigns.reduce((sum, c) => sum + (parseFloat(c.CPA) || 0), 0);
-  const campaignsWithCPA = campaigns.filter(c => (parseFloat(c.CPA) || 0) > 0).length;
-  const avgTBA = campaignsWithCPA > 0 ? totalCPA / campaignsWithCPA : 0;
-  
-  // Top talento por FTDs
-  const talentFTDs = {};
+  // Agrupar por campaña única (id) para evitar duplicados
+  // Cada entregable tiene el mismo FTDObtenido de su campaña padre
+  const uniqueCampaigns = new Map();
   campaigns.forEach(c => {
+    if (c.id && !uniqueCampaigns.has(c.id)) {
+      uniqueCampaigns.set(c.id, {
+        FTDObtenido: parseInt(c.FTDObtenido) || 0,
+        FTDs: parseInt(c.FTDs) || 0,
+        NombreTalento: c.NombreTalento,
+        PlataformaTalento: c.PlataformaTalento,
+        CPA: parseFloat(c.CPA) || 0,
+        Revenue: parseFloat(c.Revenue) || 0,
+        Deposits: parseFloat(c.Deposits) || 0,
+        PrecioVenta: parseFloat(c.PrecioVenta) || 0
+      });
+    }
+  });
+
+  // Total FTDs obtenidos (sin duplicados)
+  const totalFTDs = Array.from(uniqueCampaigns.values()).reduce((sum, c) => sum + c.FTDObtenido, 0);
+
+  // Meta total (suma de FTDs meta sin duplicados)
+  const targetFTDs = Array.from(uniqueCampaigns.values()).reduce((sum, c) => sum + c.FTDs, 0);
+
+  // Inversión real = Suma de (CPA × FTDs obtenidos) de cada campaña única
+  const totalInversionReal = Array.from(uniqueCampaigns.values()).reduce((sum, c) => {
+    return sum + (c.CPA * c.FTDObtenido);
+  }, 0);
+
+  // Presupuesto objetivo = Suma de precio_venta de cada campaña única
+  const presupuestoObjetivo = Array.from(uniqueCampaigns.values()).reduce((sum, c) => {
+    return sum + c.PrecioVenta;
+  }, 0);
+
+  // CPA Target % = (Inversión real / Presupuesto objetivo) * 100
+  // Representa cuánto has invertido vs cuánto tenías presupuestado
+  const metaProgress = presupuestoObjetivo > 0 ? (totalInversionReal / presupuestoObjetivo) * 100 : 0;
+  
+  // CPA promedio (de campañas únicas)
+  const uniqueCampaignsArray = Array.from(uniqueCampaigns.values());
+  const campaignsWithCPA = uniqueCampaignsArray.filter(c => c.CPA > 0);
+  const avgTBA = campaignsWithCPA.length > 0
+    ? campaignsWithCPA.reduce((sum, c) => sum + c.CPA, 0) / campaignsWithCPA.length
+    : 0;
+
+  // Top talento por FTDs (usando campañas únicas)
+  const talentFTDs = {};
+  uniqueCampaignsArray.forEach(c => {
     const talent = c.NombreTalento || 'Unknown';
     if (!talentFTDs[talent]) {
       talentFTDs[talent] = { count: 0, handle: c.PlataformaTalento || '' };
     }
-    talentFTDs[talent].count += parseInt(c.FTDObtenido) || 0;
+    talentFTDs[talent].count += c.FTDObtenido;
   });
-  
+
   const topTalentEntry = Object.entries(talentFTDs)
     .sort((a, b) => b[1].count - a[1].count)[0];
   const topTalent = topTalentEntry ? topTalentEntry[0].split(' ')[0] : '-';
   const topTalentHandle = topTalentEntry ? topTalentEntry[1].handle : '';
-  
-  // Plataforma top (extraer dominio de PlataformaTalento)
+
+  // Plataforma top (extraer dominio de PlataformaTalento, usando campañas únicas)
   const platformCounts = {};
-  campaigns.forEach(c => {
+  uniqueCampaignsArray.forEach(c => {
     const platform = c.PlataformaTalento || '';
-    const domain = platform.includes('kick.com') ? 'Kick' : 
+    const domain = platform.includes('kick.com') ? 'Kick' :
                    platform.includes('twitch') ? 'Twitch' :
                    platform.includes('youtube') ? 'YouTube' : 'Other';
     if (!platformCounts[domain]) {
       platformCounts[domain] = 0;
     }
-    platformCounts[domain] += parseInt(c.FTDObtenido) || 0;
+    platformCounts[domain] += c.FTDObtenido;
   });
-  
+
   const topPlatformEntry = Object.entries(platformCounts)
     .sort((a, b) => b[1] - a[1])[0];
   const topPlatform = topPlatformEntry ? topPlatformEntry[0] : 'N/A';
   const topPlatformFTDs = topPlatformEntry ? topPlatformEntry[1] : 0;
 
-  // Revenue (suma real del campo Revenue/NRG del API)
-  const rng = campaigns.reduce((sum, c) => sum + (parseFloat(c.Revenue) || 0), 0);
+  // Revenue (suma de campañas únicas)
+  const rng = uniqueCampaignsArray.reduce((sum, c) => sum + c.Revenue, 0);
 
-  // Total Deposits (suma real del campo Deposits del API)
-  const totalDeposits = campaigns.reduce((sum, c) => sum + (parseFloat(c.Deposits) || 0), 0);
+  // Total Deposits (suma de campañas únicas)
+  const totalDeposits = uniqueCampaignsArray.reduce((sum, c) => sum + c.Deposits, 0);
 
   return {
     totalFTDs,
