@@ -1,0 +1,1325 @@
+<template>
+  <div class="deliverable-details">
+    <div class="details-header">
+      <div class="header-info">
+        <div class="header-title-section">
+          <h4 class="details-title">{{ deliverable.Tituloentregable || 'Deliverable' }}</h4>
+          <div class="header-badges">
+            <span class="badge badge-outline">Stream</span>
+            <span class="badge badge-secondary">
+              {{ extractPlatform(deliverable.PlataformaTalento) }}
+            </span>
+          </div>
+        </div>
+        <div class="header-meta">
+          <span class="meta-item">Talent: {{ deliverable.NombreTalento || '-' }}</span>
+          <span class="meta-separator">•</span>
+          <span class="meta-item">Published: {{ formatDateShort(deliverable.entregables_fecha) }}</span>
+        </div>
+      </div>
+      <button @click="emit('close')" class="btn-close" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- KPIs Conversiones -->
+    <div class="kpis-section">
+      <div class="kpi-card">
+        <span class="kpi-label">Clicks</span>
+        <span class="kpi-value">{{ formatNumber(conversionTotals.totalClicks) }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Registers</span>
+        <span class="kpi-value" >{{ formatNumber(conversionTotals.totalRegistros) }}</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Deposits</span>
+        <span class="kpi-value">{{ formatNumber(conversionTotals.totalDepositos) }}</span>
+      </div>
+
+    <!--   <template v-if="showYouTubeMetrics">
+        <div class="kpi-card">
+          <span class="kpi-label">Views</span>
+          <span class="kpi-value">{{ formatNumber(deliverable.Views || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Likes</span>
+          <span class="kpi-value" >{{ formatNumber(deliverable.Likes || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Comments</span>
+          <span class="kpi-value" >{{ formatNumber(deliverable.Comments || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Engagement Rate</span>
+          <span class="kpi-value" >{{ calculateEngagement(deliverable) }}%</span>
+        </div>
+      </template>
+      <template v-if="showStreamingMetrics">
+        <div class="kpi-card">
+          <span class="kpi-label">Avg Viewers</span>
+          <span class="kpi-value" >{{ formatNumber(deliverable['Avg Viewers'] || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Peak Viewers</span>
+          <span class="kpi-value" >{{ formatNumber(deliverable['Peak Viewers'] || 0) }}</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Minutes Watched</span>
+          <span class="kpi-value" >{{ formatNumber(deliverable['Minutes Watched'] || 0) }}</span>
+        </div>
+      </template> -->
+    </div>
+
+    <!-- Viewer Timeline Chart -->
+    <div class="chart-card chart-full" v-if="showStreamingMetrics && hasStreamDuration">
+      <div class="chart-header">
+        <div class="chart-title-section">
+          <h4 class="chart-title">Viewer Timeline</h4>
+          <div class="stream-duration-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Show Time ({{ formatStreamDuration(streamDuration) }} broadcast)</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrapper-large">
+        <v-chart
+          :option="viewerTimelineOptions"
+          :autoresize="true"
+          class="echart"
+        />
+      </div>
+    </div>
+
+    <!-- Conversion Summary -->
+    <div class="conversion-summary" v-if="hasTimelineData">
+      <div class="summary-card" v-if="timelineData.startTime && timelineData.endTime">
+        <span class="summary-label">Período</span>
+        <span class="summary-value summary-period">
+          {{ formatDateShort(timelineData.startTime) }} - {{ formatDateShort(timelineData.endTime) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Timeline Chart with Timeframe Selector -->
+    <div class="chart-card chart-full">
+      <div class="chart-header">
+        <h4 class="chart-title">Conversion Timeline</h4>
+        <div class="timeframe-selector" v-if="hasTimelineData">
+          <button
+            v-for="tf in timeframes"
+            :key="tf.value"
+            @click="selectedTimeframe = tf.value"
+            :class="['timeframe-btn', { 'timeframe-btn-active': selectedTimeframe === tf.value }]"
+            type="button"
+          >
+            {{ tf.label }}
+          </button>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <div v-if="!hasTimelineData" class="no-data-message">
+          <p>No conversion timestamps available for this deliverable.</p>
+          <p class="text-muted">Conversions data will appear here once available.</p>
+        </div>
+        <v-chart
+          v-else
+          :option="conversionTimelineOptions"
+          :autoresize="true"
+          class="echart"
+        />
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
+import VChart from 'vue-echarts';
+import { use } from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { LineChart, ScatterChart } from 'echarts/charts';
+import {
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  MarkLineComponent,
+  MarkPointComponent
+} from 'echarts/components';
+
+use([
+  CanvasRenderer,
+  LineChart,
+  ScatterChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  MarkLineComponent,
+  MarkPointComponent
+]);
+
+const props = defineProps({
+  deliverable: {
+    type: Object,
+    required: true
+  },
+  relatedDeliverables: {
+    type: Array,
+    default: () => []
+  },
+  source: {
+    type: String,
+    default: null
+  }
+});
+
+const emit = defineEmits(['close']);
+
+const timeframes = [
+  { label: '1M', value: '1m' },
+  { label: '5M', value: '5m' },
+  { label: '15M', value: '15m' },
+  { label: '30M', value: '30m' },
+  { label: '1H', value: '1h' },
+  { label: '4H', value: '4h' },
+  { label: '1D', value: '1d' },
+  { label: '1W', value: '1w' },
+  { label: '1Mo', value: '1mo' },
+  { label: 'All', value: 'lifetime' }
+];
+
+const selectedTimeframe = ref('1d');
+
+const streamDuration = computed(() => {
+  // Usar directamente Duracion_entregable si está disponible
+  if (props.deliverable.Duracion_entregable && props.deliverable.Duracion_entregable > 0) {
+    return parseInt(props.deliverable.Duracion_entregable);
+  }
+
+  // Fallback: calcular desde timestamps si no está disponible
+  if (!props.deliverable.timestamp_inicio || !props.deliverable.Timestamp_fin) {
+    return 0;
+  }
+  const start = new Date(props.deliverable.timestamp_inicio);
+  const end = new Date(props.deliverable.Timestamp_fin);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+    return 0;
+  }
+  return Math.round((end - start) / (1000 * 60));
+});
+
+const hasStreamDuration = computed(() => streamDuration.value > 0);
+
+const formatStreamDuration = (minutes) => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
+};
+
+const viewerTimelineOptions = computed(() => {
+  const duration = streamDuration.value;
+  const peakViewers = parseInt(props.deliverable['Peak Viewers']) || 0;
+  const avgViewers = parseFloat(props.deliverable['Avg Viewers']) || 0;
+
+  if (duration === 0 || peakViewers === 0) {
+    return {};
+  }
+
+  const numPoints = Math.min(Math.floor(duration / 10), 30);
+  const pointsBeforeEnd = Math.floor(numPoints * 0.7);
+  const pointsAfterEnd = numPoints - pointsBeforeEnd;
+
+  const duringStream = [];
+  for (let i = 0; i < pointsBeforeEnd; i++) {
+    const progress = i / (pointsBeforeEnd - 1);
+    const easeProgress = 1 - Math.pow(1 - progress, 2);
+    const viewers = Math.floor(avgViewers + (peakViewers - avgViewers) * easeProgress);
+    duringStream.push(viewers);
+  }
+
+  const afterStream = [];
+  for (let i = 0; i < pointsAfterEnd; i++) {
+    const progress = i / (pointsAfterEnd - 1);
+    const easeProgress = Math.pow(progress, 1.5);
+    const viewers = Math.floor(peakViewers * (1 - easeProgress * 0.95));
+    afterStream.push(viewers);
+  }
+
+  const allData = [...duringStream, ...afterStream];
+
+  const relativeLabels = [];
+  const timeLabels = [];
+  const startTime = props.deliverable.timestamp_inicio ? new Date(props.deliverable.timestamp_inicio) : new Date();
+  const endTime = props.deliverable.Timestamp_fin ? new Date(props.deliverable.Timestamp_fin) : new Date(startTime.getTime() + duration * 60000);
+
+  // Generar etiquetas para ambos ejes X
+  for (let i = 0; i < numPoints; i++) {
+    const minutesElapsed = (i / (numPoints - 1)) * duration * 1.5;
+    const hours = Math.floor(minutesElapsed / 60);
+    const mins = Math.floor(minutesElapsed % 60);
+
+    // Eje superior: tiempo relativo
+    if (i === 0) {
+      relativeLabels.push('Start');
+    } else if (i === pointsBeforeEnd - 1) {
+      relativeLabels.push('End');
+    } else {
+      relativeLabels.push(hours > 0 ? `+${hours * 60 + mins}m` : `+${mins}m`);
+    }
+
+    // Eje inferior: tiempo real
+    const actualTime = new Date(startTime.getTime() + minutesElapsed * 60000);
+    const timeStr = actualTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    timeLabels.push(timeStr);
+  }
+
+  // Procesar conversiones (clicks, registros, depósitos)
+  const timestampsObj = props.deliverable.timestampsEntregables || {};
+  const depositos = timestampsObj.depositos || [];
+  const registros = timestampsObj.registros || [];
+  const clicks = timestampsObj.clicks || [];
+
+  // Función para convertir timestamp a índice en el gráfico
+  const getPointIndex = (convTime) => {
+    const convDate = new Date(convTime);
+    const minutesSinceStart = (convDate - startTime) / (1000 * 60);
+    // El rango total es duration * 1.5
+    const totalRange = duration * 1.5;
+    const progress = minutesSinceStart / totalRange;
+    return Math.round(progress * (numPoints - 1));
+  };
+
+  // Crear arrays de scatter data para cada tipo de conversión
+  const clicksScatter = clicks.map(c => {
+    const idx = getPointIndex(c.conv_time);
+    const isInRange = idx >= 0 && idx < pointsBeforeEnd;
+    return {
+      value: [idx, isInRange ? peakViewers * 0.1 : peakViewers * 0.05],
+      convTime: c.conv_time,
+      isInRange
+    };
+  });
+
+  const registrosScatter = registros.map(r => {
+    const idx = getPointIndex(r.conv_time);
+    const isInRange = idx >= 0 && idx < pointsBeforeEnd;
+    return {
+      value: [idx, isInRange ? peakViewers * 0.15 : peakViewers * 0.08],
+      convTime: r.conv_time,
+      isInRange
+    };
+  });
+
+  const depositosScatter = depositos.map(d => {
+    const idx = getPointIndex(d.conv_time);
+    const isInRange = idx >= 0 && idx < pointsBeforeEnd;
+    return {
+      value: [idx, isInRange ? peakViewers * 0.2 : peakViewers * 0.1],
+      convTime: d.conv_time,
+      isInRange
+    };
+  });
+
+  const textColor = '#dfe3ec';
+
+  return {
+    backgroundColor: 'transparent',
+    textStyle: {
+      color: textColor
+    },
+    grid: {
+      left: '5%',
+      right: '5%',
+      top: '15%',
+      bottom: '25%',
+      containLabel: true
+    },
+    xAxis: [
+      {
+        type: 'category',
+        data: relativeLabels,
+        position: 'top',
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: false
+        },
+        axisLabel: {
+          color: '#a78bfa',
+          fontSize: 11,
+          fontWeight: 600,
+          margin: 15
+        }
+      },
+      {
+        type: 'category',
+        data: timeLabels,
+        position: 'bottom',
+        axisLine: {
+          lineStyle: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        axisTick: {
+          show: false
+        },
+        axisLabel: {
+          color: '#22d3ee',
+          fontSize: 10,
+          rotate: 0
+        }
+      }
+    ],
+    yAxis: {
+      type: 'value',
+      name: 'Viewers (millions)',
+      nameTextStyle: {
+        color: textColor,
+        fontSize: 11,
+        fontWeight: 600,
+        padding: [0, 0, 0, 0]
+      },
+      axisLine: {
+        show: false
+      },
+      axisLabel: {
+        color: textColor,
+        fontSize: 10,
+        formatter: (value) => {
+          if (value >= 1000000) {
+            return (value / 1000000).toFixed(1) + 'M';
+          }
+          if (value >= 1000) {
+            return (value / 1000).toFixed(0) + 'K';
+          }
+          return value;
+        }
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'rgba(255, 255, 255, 0.05)',
+          type: 'dashed'
+        }
+      },
+      min: 0
+    },
+    series: [
+      {
+        name: 'Live Viewers',
+        type: 'line',
+        data: duringStream,
+        smooth: true,
+        lineStyle: {
+          color: '#a78bfa',
+          width: 3
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(167, 139, 250, 0.5)' },
+              { offset: 1, color: 'rgba(167, 139, 250, 0.1)' }
+            ]
+          }
+        },
+        symbol: 'circle',
+        symbolSize: 6,
+        itemStyle: {
+          color: '#a78bfa'
+        },
+        markPoint: {
+          data: [
+            {
+              type: 'max',
+              name: 'Peak',
+              label: {
+                show: true,
+                position: 'top',
+                formatter: () => `Peak: ${(peakViewers / 1000000).toFixed(1)}M viewers`,
+                color: textColor,
+                fontSize: 11,
+                fontWeight: 600,
+                backgroundColor: 'rgba(22, 24, 29, 0.8)',
+                padding: [6, 10],
+                borderRadius: 4
+              },
+              itemStyle: {
+                color: '#ff6b6b'
+              },
+              symbolSize: 8
+            }
+          ]
+        },
+        xAxisIndex: 0
+      },
+      {
+        name: 'On-Demand/Replay',
+        type: 'line',
+        data: Array(pointsBeforeEnd).fill(null).concat(afterStream),
+        smooth: true,
+        lineStyle: {
+          color: '#fb923c',
+          width: 3
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(251, 146, 60, 0.4)' },
+              { offset: 1, color: 'rgba(139, 92, 46, 0.2)' }
+            ]
+          }
+        },
+        symbol: 'circle',
+        symbolSize: 6,
+        itemStyle: {
+          color: '#fb923c'
+        },
+        xAxisIndex: 0,
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          data: [
+            {
+              xAxis: pointsBeforeEnd - 1,
+              label: {
+                show: true,
+                position: 'insideEndTop',
+                formatter: 'SHOW ENDS',
+                color: '#ef4444',
+                fontSize: 10,
+                fontWeight: 700,
+                backgroundColor: 'transparent',
+                distance: 10
+              },
+              lineStyle: {
+                color: '#ef4444',
+                width: 2,
+                type: 'dashed'
+              }
+            }
+          ]
+        }
+      },
+      // Clicks - During Stream
+      {
+        name: 'Clicks (During)',
+        type: 'scatter',
+        data: clicksScatter.filter(c => c.isInRange).map(c => c.value),
+        symbolSize: 8,
+        itemStyle: {
+          color: '#3b82f6'
+        },
+        xAxisIndex: 0
+      },
+      // Clicks - After Stream
+      {
+        name: 'Clicks (After)',
+        type: 'scatter',
+        data: clicksScatter.filter(c => !c.isInRange).map(c => c.value),
+        symbolSize: 8,
+        symbol: 'diamond',
+        itemStyle: {
+          color: '#3b82f680'
+        },
+        xAxisIndex: 0
+      },
+      // Registros - During Stream
+      {
+        name: 'Registros (During)',
+        type: 'scatter',
+        data: registrosScatter.filter(r => r.isInRange).map(r => r.value),
+        symbolSize: 10,
+        itemStyle: {
+          color: '#fdc600'
+        },
+        xAxisIndex: 0
+      },
+      // Registros - After Stream
+      {
+        name: 'Registros (After)',
+        type: 'scatter',
+        data: registrosScatter.filter(r => !r.isInRange).map(r => r.value),
+        symbolSize: 10,
+        symbol: 'diamond',
+        itemStyle: {
+          color: '#fdc60080'
+        },
+        xAxisIndex: 0
+      },
+      // Depositos - During Stream
+      {
+        name: 'Depositos (During)',
+        type: 'scatter',
+        data: depositosScatter.filter(d => d.isInRange).map(d => d.value),
+        symbolSize: 12,
+        itemStyle: {
+          color: '#10b981'
+        },
+        xAxisIndex: 0
+      },
+      // Depositos - After Stream
+      {
+        name: 'Depositos (After)',
+        type: 'scatter',
+        data: depositosScatter.filter(d => !d.isInRange).map(d => d.value),
+        symbolSize: 12,
+        symbol: 'diamond',
+        itemStyle: {
+          color: '#10b98180'
+        },
+        xAxisIndex: 0
+      }
+    ],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(22, 24, 29, 0.95)',
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 1,
+      textStyle: {
+        color: textColor
+      },
+      formatter: (params) => {
+        const dataIndex = params[0].dataIndex;
+        const relativeTime = relativeLabels[dataIndex];
+        const actualTime = timeLabels[dataIndex];
+
+        let result = `<div style="font-weight: bold; margin-bottom: 6px;">${relativeTime}</div>`;
+        result += `<div style="color: #6dd5ed; font-size: 10px; margin-bottom: 8px;">${actualTime}</div>`;
+
+        // Separate viewers and conversions
+        const viewerData = [];
+        const conversionData = [];
+
+        params.forEach(param => {
+          if (param.value != null) {
+            if (param.seriesName.includes('Viewers') || param.seriesName.includes('Replay')) {
+              const viewers = param.value >= 1000000
+                ? (param.value / 1000000).toFixed(2) + 'M'
+                : param.value >= 1000
+                ? (param.value / 1000).toFixed(0) + 'K'
+                : param.value;
+              viewerData.push({
+                color: param.color,
+                name: param.seriesName,
+                value: `${viewers} viewers`
+              });
+            } else {
+              conversionData.push({
+                color: param.color,
+                name: param.seriesName,
+                value: '1 conversion'
+              });
+            }
+          }
+        });
+
+        // Display viewer data
+        viewerData.forEach(item => {
+          result += `<div style="margin: 4px 0;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${item.color}; margin-right: 5px;"></span>
+            <span>${item.name}: ${item.value}</span>
+          </div>`;
+        });
+
+        // Display conversion data if any
+        if (conversionData.length > 0) {
+          result += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">`;
+          result += `<div style="font-weight: bold; font-size: 10px; margin-bottom: 4px; color: #6dd5ed;">CONVERSIONS</div>`;
+          conversionData.forEach(item => {
+            result += `<div style="margin: 4px 0;">
+              <span style="display: inline-block; width: 10px; height: 10px; background: ${item.color}; margin-right: 5px;"></span>
+              <span style="font-size: 11px;">${item.name}</span>
+            </div>`;
+          });
+          result += `</div>`;
+        }
+
+        return result;
+      }
+    },
+    legend: {
+      show: false
+    }
+  };
+});
+
+const timelineData = computed(() => {
+  const timestampsObj = props.deliverable.timestampsEntregables || {};
+  const depositos = timestampsObj.depositos || [];
+  const registros = timestampsObj.registros || [];
+  const clicks = timestampsObj.clicks || [];
+
+  const allTimestamps = [...depositos, ...registros, ...clicks];
+
+  if (allTimestamps.length === 0) {
+    return { clicks: [], registros: [], depositos: [], startTime: null, endTime: null };
+  }
+
+  const sortedTimestamps = [...allTimestamps].sort((a, b) => {
+    return new Date(a.conv_time) - new Date(b.conv_time);
+  });
+
+  const firstDate = new Date(sortedTimestamps[0].conv_time);
+  const lastDate = new Date(sortedTimestamps[sortedTimestamps.length - 1].conv_time);
+
+  let intervalMs = 0;
+  let labelFormat = null;
+
+  switch (selectedTimeframe.value) {
+    case '1m':
+      intervalMs = 60 * 1000;
+      labelFormat = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      break;
+    case '5m':
+      intervalMs = 5 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      break;
+    case '15m':
+      intervalMs = 15 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      break;
+    case '30m':
+      intervalMs = 30 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      break;
+    case '1h':
+      intervalMs = 60 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      break;
+    case '4h':
+      intervalMs = 4 * 60 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit' });
+      break;
+    case '1d':
+      intervalMs = 24 * 60 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      break;
+    case '1w':
+      intervalMs = 7 * 24 * 60 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      break;
+    case '1mo':
+      intervalMs = 30 * 24 * 60 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      break;
+    case 'lifetime':
+      const totalRange = lastDate - firstDate;
+      intervalMs = totalRange / 30;
+      labelFormat = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      break;
+    default:
+      intervalMs = 24 * 60 * 60 * 1000;
+      labelFormat = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  const buckets = new Map();
+  let currentTime = new Date(Math.floor(firstDate.getTime() / intervalMs) * intervalMs);
+  const endTime = new Date(Math.ceil(lastDate.getTime() / intervalMs) * intervalMs);
+
+  while (currentTime <= endTime) {
+    const bucketKey = currentTime.getTime();
+    buckets.set(bucketKey, {
+      time: new Date(currentTime),
+      clicks: 0,
+      registros: 0,
+      depositos: 0
+    });
+    currentTime = new Date(currentTime.getTime() + intervalMs);
+  }
+
+  const assignToBuckets = (timestamps, type) => {
+    timestamps.forEach(ts => {
+      const tsDate = new Date(ts.conv_time);
+      const bucketKey = Math.floor(tsDate.getTime() / intervalMs) * intervalMs;
+
+      if (buckets.has(bucketKey)) {
+        const bucket = buckets.get(bucketKey);
+        bucket[type] += 1;
+      }
+    });
+  };
+
+  assignToBuckets(clicks, 'clicks');
+  assignToBuckets(registros, 'registros');
+  assignToBuckets(depositos, 'depositos');
+
+  const clicksTimeline = [];
+  const registrosTimeline = [];
+  const depositosTimeline = [];
+  const labels = [];
+
+  Array.from(buckets.values()).forEach(bucket => {
+    labels.push(labelFormat(bucket.time));
+    clicksTimeline.push(bucket.clicks);
+    registrosTimeline.push(bucket.registros);
+    depositosTimeline.push(bucket.depositos);
+  });
+
+  return {
+    labels,
+    clicks: clicksTimeline,
+    registros: registrosTimeline,
+    depositos: depositosTimeline,
+    startTime: firstDate,
+    endTime: lastDate
+  };
+});
+
+const hasTimelineData = computed(() => {
+  const data = timelineData.value;
+  return data.labels && data.labels.length > 0;
+});
+
+const conversionTotals = computed(() => {
+  const timestampsObj = props.deliverable.timestampsEntregables || {};
+  const depositos = timestampsObj.depositos || [];
+  const registros = timestampsObj.registros || [];
+  const clicks = timestampsObj.clicks || [];
+
+  return {
+    totalClicks: clicks.length,
+    totalRegistros: registros.length,
+    totalDepositos: depositos.length
+  };
+});
+
+const formatNumber = (value) => {
+  const num = parseInt(value) || 0;
+  return num.toLocaleString('en-US');
+};
+
+const extractPlatform = (url) => {
+  if (!url) return '-';
+  if (url.includes('kick.com')) return 'Kick';
+  if (url.includes('twitch')) return 'Twitch';
+  if (url.includes('youtube')) return 'YouTube';
+  if (url.includes('instagram')) return 'Instagram';
+  if (url.includes('tiktok')) return 'TikTok';
+  return 'Other Platform';
+};
+
+const isYouTube = (url) => {
+  if (props.source) {
+    return props.source.toLowerCase() === 'youtube';
+  }
+  return url && url.includes('youtube');
+};
+
+const isStreamingPlatform = computed(() => {
+  if (props.source) {
+    const sourceLower = props.source.toLowerCase();
+    return sourceLower === 'kick' || sourceLower === 'twitch';
+  }
+  const url = props.deliverable.PlataformaTalento || '';
+  return url.includes('kick.com') || url.includes('twitch');
+});
+
+const showYouTubeMetrics = computed(() => {
+  return isYouTube(props.deliverable.PlataformaTalento);
+});
+
+const showStreamingMetrics = computed(() => {
+  return isStreamingPlatform.value || !showYouTubeMetrics.value;
+});
+
+const calculateEngagement = (deliverable) => {
+  const views = parseInt(deliverable.Views) || 0;
+
+  if (views === 0) return '0.00';
+
+  if (showYouTubeMetrics.value) {
+    const likes = parseInt(deliverable.Likes) || 0;
+    const comments = parseInt(deliverable.Comments) || 0;
+    const engagement = ((likes + comments) / views) * 100;
+    return engagement.toFixed(2);
+  }
+
+  return '0.00';
+};
+
+const formatDateShort = (date) => {
+  if (!date) return '-';
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return date;
+    return dateObj.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return date;
+  }
+};
+
+const conversionTimelineOptions = computed(() => {
+  if (!hasTimelineData.value) {
+    return {};
+  }
+
+  const textColor = '#dfe3ec';
+  const data = timelineData.value;
+
+  return {
+    backgroundColor: 'transparent',
+    textStyle: {
+      color: textColor
+    },
+    grid: {
+      left: '5%',
+      right: '5%',
+      top: '10%',
+      bottom: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.labels,
+      axisLine: {
+        lineStyle: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        }
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: textColor,
+        fontSize: 10,
+        rotate: 45
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Conversions',
+      nameTextStyle: {
+        color: textColor,
+        fontSize: 11,
+        fontWeight: 600
+      },
+      axisLine: {
+        show: false
+      },
+      axisLabel: {
+        color: textColor,
+        fontSize: 10,
+        formatter: (value) => value.toLocaleString('en-US')
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'rgba(255, 255, 255, 0.05)',
+          type: 'dashed'
+        }
+      },
+      min: 0
+    },
+    series: [
+      {
+        name: 'Clicks',
+        type: 'line',
+        data: data.clicks,
+        smooth: true,
+        lineStyle: {
+          color: '#3b82f6',
+          width: 3
+        },
+        itemStyle: {
+          color: '#3b82f6'
+        },
+        symbol: 'circle',
+        symbolSize: 6
+      },
+      {
+        name: 'Registros',
+        type: 'line',
+        data: data.registros,
+        smooth: true,
+        lineStyle: {
+          color: '#fdc600',
+          width: 3
+        },
+        itemStyle: {
+          color: '#fdc600'
+        },
+        symbol: 'circle',
+        symbolSize: 6
+      },
+      {
+        name: 'Depósitos',
+        type: 'line',
+        data: data.depositos,
+        smooth: true,
+        lineStyle: {
+          color: '#10b981',
+          width: 3
+        },
+        itemStyle: {
+          color: '#10b981'
+        },
+        symbol: 'circle',
+        symbolSize: 6
+      }
+    ],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(22, 24, 29, 0.95)',
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 1,
+      textStyle: {
+        color: textColor
+      },
+      formatter: (params) => {
+        let result = `<div style="font-weight: bold; margin-bottom: 6px;">${params[0].axisValue}</div>`;
+
+        params.forEach(param => {
+          if (param.value != null) {
+            result += `<div style="margin: 4px 0;">
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${param.color}; margin-right: 5px;"></span>
+              <span>${param.seriesName}: ${param.value.toLocaleString('en-US')}</span>
+            </div>`;
+          }
+        });
+
+        return result;
+      }
+    },
+    legend: {
+      show: true,
+      top: 0,
+      textStyle: {
+        color: textColor,
+        fontSize: 11
+      },
+      icon: 'circle',
+      itemWidth: 10,
+      itemHeight: 10
+    }
+  };
+});
+</script>
+
+<style scoped>
+.deliverable-details {
+  padding: var(--spacing-lg);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-info {
+  flex: 1;
+}
+
+.header-title-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-sm);
+}
+
+.details-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.header-badges {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.badge-secondary {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.header-meta {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--spacing-sm);
+}
+
+.meta-item {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.meta-separator {
+  color: var(--text-muted);
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.btn-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.kpis-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.conversion-summary {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  flex: 1;
+  min-width: 200px;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.summary-value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.summary-period {
+  color: var(--accent-primary);
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-sm);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.kpi-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpi-value {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.chart-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-card.chart-full {
+  width: 100%;
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.chart-title-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.stream-duration-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+.stream-duration-badge svg {
+  color: #a78bfa;
+}
+
+.chart-wrapper {
+  height: 300px;
+  position: relative;
+}
+
+.chart-wrapper-large {
+  height: 450px;
+  position: relative;
+  width: 100%;
+}
+
+.echart {
+  width: 100%;
+  height: 100%;
+}
+
+.no-data-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.no-data-message p {
+  margin: var(--spacing-sm) 0;
+}
+
+.no-data-message .text-muted {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.timeframe-selector {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.timeframe-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeframe-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.timeframe-btn-active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--color-black);
+}
+
+@media (max-width: 768px) {
+  .deliverable-details {
+    padding: var(--spacing-md);
+  }
+
+  .kpis-section {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper {
+    height: 200px;
+  }
+
+  .chart-wrapper-large {
+    height: 350px;
+  }
+}
+</style>
