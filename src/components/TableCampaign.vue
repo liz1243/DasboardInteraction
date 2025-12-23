@@ -230,7 +230,7 @@
               <span class="campaign-date">{{ formatDateRange(campaign.entregables_fecha) }}</span>
             </td>
             <td class="text-center">
-              <span class="metric-value metric-ftds">{{ formatNumber(campaign.FTDObtenido || 0) }}</span>
+              <span class="metric-value metric-ftds">{{ formatNumber(campaign.FTD_timestamp || 0) }}</span>
             </td>
             <td class="text-center">
               <span class="metric-value metric-tba">${{ calculateTBA(campaign) }}</span>
@@ -444,8 +444,8 @@ const sortedCampaigns = computed(() => {
         bValue = parseInt(b.FTDs) || 0;
         break;
       case 'ftds':
-        aValue = parseInt(a.FTDObtenido) || 0;
-        bValue = parseInt(b.FTDObtenido) || 0;
+        aValue = parseInt(a.FTD_timestamp) || 0;
+        bValue = parseInt(b.FTD_timestamp) || 0;
         break;
       case 'progress':
         const aTarget = parseInt(a.FTDs) || 0;

@@ -23,7 +23,7 @@
       </div>
     </div>
     <div class="kpi-value-container">
-      <div class="kpi-value" :class="valueClass">
+      <div class="kpi-value value-yellow">
         {{ formattedValue }}
       </div>
       <div class="kpi-subtitle">
@@ -255,10 +255,10 @@ const formatNumber = (numValue) => {
   height: 14px;
 }
 
-/* Colores primarios: #fdc600, #bfbfbf, #ffd54d */
+/* Colores primarios: #fdc600, #bfbfbf, #e6ba4c */
 .icon-cyan {
   background: rgba(253, 198, 0, 0.1); /* #fdc600 con opacidad */
-  color: #fdc600;
+  color: #e6ba4c;
 }
 
 .icon-pink {
@@ -267,8 +267,8 @@ const formatNumber = (numValue) => {
 }
 
 .icon-green {
-  background: rgba(255, 213, 77, 0.1); /* #ffd54d con opacidad */
-  color: #ffd54d;
+  background: rgba(255, 213, 77, 0.1); /* #e6ba4c con opacidad */
+  color: #e6ba4c;
 }
 
 .icon-blue {
@@ -290,7 +290,10 @@ const formatNumber = (numValue) => {
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
-
+.value-yellow {
+  color: var(--color-white);
+  text-shadow: 0 0 20px rgba(255, 207, 74, 0.3);
+}
 .value-cyan {
   color: var(--accent-cyan);
   text-shadow: 0 0 20px rgba(0, 234, 255, 0.3);

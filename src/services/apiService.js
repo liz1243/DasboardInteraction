@@ -4,7 +4,7 @@
  */
 
 // URL de la API de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL ='https://script.google.com/macros/s/AKfycbwvdZbqqTaaP-zi9nHkrd_jckMuRWC0QkZFxO9ayfaEZDszqLOWEIFm6WWjdf2TXPE/exec'; 
+const GOOGLE_APPS_SCRIPT_URL ='https://script.google.com/macros/s/AKfycbx-WNdh6eq6_06m3V2yXvwU_DgsDvoTBkGKpS4ttyc0f6qVtRGzW-SdNN0NZV9TFWqN/exec'; 
 //'https://script.google.com/macros/s/AKfycbzFvwGG2SylsmfsqaFiSn6wKwIvZOudgjbFFJDXmgOvh863vTQEqCJLEV5mH7KobpUAXQ/exec';
 
 /**
@@ -23,14 +23,18 @@ const transformApiData = (apiResponse) => {
     // Si tiene entregables, crear un objeto por cada entregable
     if (campaign.entregables && Array.isArray(campaign.entregables) && campaign.entregables.length > 0) {
       campaign.entregables.forEach(entregable => {
+        console.log('=== API Service Debug ===');
+        console.log('Entregable desde API:', entregable);
+        console.log('timestampsEntregables en entregable:', entregable.timestampsEntregables);
+
         flatCampaigns.push({
-          id: campaign.id,
+          id: campaign.ID_campana || campaign.id,
           NombreCampana: campaign.NombreCampana,
           NombreCliente: campaign.NombreCliente,
           NombreTalento: campaign.NombreTalento,
           PlataformaTalento: campaign.PlataformaTalento,
-          FTDs: campaign.FTDs || 0,
-          FTDObtenido: campaign.FTDObtenido || 0,
+          FTDs: entregable.FTDs || 0,
+          FTDObtenido: entregable.FTDobtenido || entregable.FTDActual || 0,
           // Datos del entregable
           entregables_URL: entregable.entregables_URL || '',
           Tituloentregable: entregable.Tituloentregable || '',
@@ -39,22 +43,26 @@ const transformApiData = (apiResponse) => {
           'Avg Viewers': entregable['Avg Viewers'] || 0,
           'Peak Viewers': entregable['Peak Viewers'] || 0,
           'Minutes Watched': entregable['Minutes Watched'] || 0,
-          // Views, Likes, Comments (si no vienen, se normalizarán después)
           Views: entregable.Views || entregable['Peak Viewers'] || 0,
           Likes: entregable.Likes || 0,
           Comments: entregable.Comments || 0,
-          // Nuevos campos de monetización del entregable
-          CPA: entregable.cpa || entregable.CPAObtenido || entregable.CPAobtenido || 0,
+          CPA: entregable.CPAobtenido || entregable.cpa || 0,
           Revenue: entregable.NRG || 0,
-          Deposits: entregable.Deposito_timestamp || entregable.Deposito || 0,
+          Deposits: entregable.Deposito || 0,
           FTDActual: entregable.FTDActual || 0,
           Presupuesto: entregable.Presupuesto || 0,
-          PrecioVenta: entregable.precio_venta || 0,
+          PrecioVenta: entregable.precioVenta || 0,
           PrecioVentaEntregable: entregable.PrecioVentaxEntegable || 0,
           FTDobjetivo: entregable.FTDobjetivo || 0,
+          FTD_timestamp: entregable.FTD_timestamp,
+          // Timestamps de duración
+          timestamp_inicio: entregable.timestamp_inicio || null,
+          Timestamp_fin: entregable.Timestamp_fin || null,
+          Duracion_entregable: entregable.Duracion_entregable || null,
           // Campos de conversión
           Registros: entregable.Registro_timestamp || 0,
-          Clicks: entregable.FTD_timestamp || 0
+          Clicks: entregable.FTD_timestamp || 0,
+          timestampsEntregables: entregable.timestampsEntregables || {}
         });
       });
     } else {
@@ -83,10 +91,26 @@ const transformApiData = (apiResponse) => {
         Deposits: 0,
         FTDActual: 0,
         Presupuesto: 0,
-        FTDobjetivo: 0
+        FTDobjetivo: 0,
+        FTD_timestamp: 0,
+        // Timestamps de duración
+        timestamp_inicio: null,
+        Timestamp_fin: null,
+        Duracion_entregable: null,
+        // Campos de conversión
+        Registros: 0,
+        Clicks: 0,
+        timestampsEntregables: {}
       });
     }
   });
+
+  console.log('=== API Service - Datos transformados ===');
+  console.log('Total de campañas/entregables:', flatCampaigns.length);
+  if (flatCampaigns.length > 0) {
+    console.log('Primer entregable transformado:', flatCampaigns[0]);
+    console.log('timestampsEntregables en primer entregable:', flatCampaigns[0].timestampsEntregables);
+  }
 
   return flatCampaigns;
 };

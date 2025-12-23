@@ -222,13 +222,14 @@ const mielaColors = {
 
 // Métricas disponibles - cada una con su color único de la paleta Miela
 const availableMetrics = [
-  { key: 'ftds', label: 'Conversions', color: mielaColors.ftds, field: 'FTDObtenido' },
-  { key: 'views', label: 'Views', color: mielaColors.views, field: 'Views' },
-  { key: 'avgViewers', label: 'Avg Viewers', color: mielaColors.avgViewers, field: 'Avg Viewers' },
-  { key: 'peakViewers', label: 'Peak Viewers', color: mielaColors.peakViewers, field: 'Peak Viewers' },
-  { key: 'minutesWatched', label: 'Minutes Watched', color: mielaColors.minutesWatched, field: 'Minutes Watched' },
-  { key: 'likes', label: 'Likes', color: mielaColors.likes, field: 'Likes' },
-  { key: 'comments', label: 'Comments', color: mielaColors.comments, field: 'Comments' }
+  { key: 'ftds', label: 'Conversions', color: mielaColors.ftds, field: 'FTDObtenido', yAxisID: 'y' },
+  { key: 'duration', label: 'Duration (min)', color: '#ff6b6b', field: 'Duracion_entregable', yAxisID: 'y' },
+  { key: 'views', label: 'Views', color: mielaColors.views, field: 'Views', yAxisID: 'y1' },
+  { key: 'avgViewers', label: 'Avg Viewers', color: mielaColors.avgViewers, field: 'Avg Viewers', yAxisID: 'y1' },
+  { key: 'peakViewers', label: 'Peak Viewers', color: mielaColors.peakViewers, field: 'Peak Viewers', yAxisID: 'y1' },
+  { key: 'minutesWatched', label: 'Minutes Watched', color: mielaColors.minutesWatched, field: 'Minutes Watched', yAxisID: 'y1' },
+  { key: 'likes', label: 'Likes', color: mielaColors.likes, field: 'Likes', yAxisID: 'y1' },
+  { key: 'comments', label: 'Comments', color: mielaColors.comments, field: 'Comments', yAxisID: 'y1' }
 ];
 
 // Función genérica para detectar plataforma desde URL
@@ -271,6 +272,7 @@ const hasYouTubeCampaigns = computed(() => {
 // Estado de métricas visibles - se inicializa según el tipo de plataforma
 const visibleMetrics = ref({
   ftds: true,
+  duration: false,
   views: false,
   avgViewers: false,
   peakViewers: false,
@@ -285,6 +287,7 @@ const initializeMetrics = () => {
     // YouTube: mostrar Views, Likes, Comments
     visibleMetrics.value = {
       ftds: true,
+      duration: true,
       views: true,
       likes: true,
       comments: true,
@@ -296,6 +299,7 @@ const initializeMetrics = () => {
     // Otras plataformas: mostrar Avg Viewers, Peak Viewers, Minutes Watched
     visibleMetrics.value = {
       ftds: true,
+      duration: true,
       views: false,
       likes: false,
       comments: false,
@@ -330,10 +334,11 @@ watch(() => props.data, () => {
 
 // Filtrar métricas disponibles según la plataforma
 const visibleMetricsList = computed(() => {
-  // FTDs siempre está disponible
+  // FTDs y Duration siempre están disponibles
   const ftdsMetric = availableMetrics.find(m => m.key === 'ftds');
-  const result = [ftdsMetric];
-  
+  const durationMetric = availableMetrics.find(m => m.key === 'duration');
+  const result = [ftdsMetric, durationMetric];
+
   if (hasYouTubeCampaigns.value) {
     // YouTube: mostrar Views, Likes, Comments
     result.push(
@@ -349,7 +354,7 @@ const visibleMetricsList = computed(() => {
       availableMetrics.find(m => m.key === 'minutesWatched')
     );
   }
-  
+
   return result.filter(m => m !== undefined);
 });
 
@@ -482,6 +487,7 @@ const chartData = computed(() => {
           grouped[dateKey] = {
             date: date,
             ftds: 0,
+            duration: 0,
             views: 0,
             avgViewers: 0,
             peakViewers: 0,
@@ -489,21 +495,35 @@ const chartData = computed(() => {
             likes: 0,
             comments: 0,
             count: 0,
-            clients: [] // Almacenar información de clientes
+            clients: [], // Almacenar información de clientes
+            timestamps: [] // Almacenar información de timestamps
           };
         }
         
         if (grouped[dateKey]) {
           const ftds = parseInt(campaign.FTDObtenido) || 0;
+
+          // Calcular duración en minutos a partir de timestamps
+          let duration = 0;
+          if (campaign.timestamp_inicio && campaign.Timestamp_fin) {
+            const start = new Date(campaign.timestamp_inicio);
+            const end = new Date(campaign.Timestamp_fin);
+
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+              duration = Math.round((end - start) / (1000 * 60));
+            }
+          }
+
           const views = parseInt(campaign.Views) || 0;
           const avgViewers = parseFloat(campaign['Avg Viewers']) || 0;
           const peakViewers = parseInt(campaign['Peak Viewers']) || 0;
           const minutesWatched = parseInt(campaign['Minutes Watched']) || 0;
           const likes = parseInt(campaign.Likes) || 0;
           const comments = parseInt(campaign.Comments) || 0;
-          
-          
+
+
           grouped[dateKey].ftds += ftds;
+          grouped[dateKey].duration += duration;
           grouped[dateKey].views += views;
           grouped[dateKey].avgViewers += avgViewers;
           grouped[dateKey].peakViewers += peakViewers;
@@ -511,7 +531,7 @@ const chartData = computed(() => {
           grouped[dateKey].likes += likes;
           grouped[dateKey].comments += comments;
           grouped[dateKey].count += 1;
-          
+
           // Almacenar información del cliente (evitar duplicados)
           const clientInfo = {
             cliente: campaign.NombreCliente || '-',
@@ -523,18 +543,29 @@ const chartData = computed(() => {
           if (!clientExists) {
             grouped[dateKey].clients.push(clientInfo);
           }
+
+          // Almacenar información de timestamps
+          const timestampInfo = {
+            timestamp_inicio: campaign.timestamp_inicio || '-',
+            Timestamp_fin: campaign.Timestamp_fin || '-',
+            duration: duration
+          };
+
+          grouped[dateKey].timestamps.push(timestampInfo);
           
           if (index < 10) {
-            sampleDates.push({ 
-              index, 
-              fecha: dateStr, 
-              parsed: dateKey, 
-              ftds, 
+            sampleDates.push({
+              index,
+              fecha: dateStr,
+              parsed: dateKey,
+              ftds,
+              duration,
               views,
               avgViewers,
               peakViewers,
               minutesWatched,
               rawFTD: campaign.FTDObtenido,
+              rawDuration: campaign.Duracion_entregable,
               rawViews: campaign.Views,
               rawAvgViewers: campaign['Avg Viewers'],
               rawPeakViewers: campaign['Peak Viewers'],
@@ -542,6 +573,7 @@ const chartData = computed(() => {
               dateObj: date.toISOString().split('T')[0],
               afterSum: {
                 ftds: grouped[dateKey].ftds,
+                duration: grouped[dateKey].duration,
                 views: grouped[dateKey].views,
                 peakViewers: grouped[dateKey].peakViewers
               }
@@ -586,12 +618,12 @@ const chartData = computed(() => {
   // Filtrar solo los días que tienen datos reales (vienen de entregables_fecha)
   // No mostrar días vacíos que se crearon al inicializar el mes
   const entriesWithData = Object.entries(grouped).filter(([key, value]) => {
-    // Solo incluir si tiene datos (ftds, views, etc.) o si el dateKey viene de un entregable real
+    // Solo incluir si tiene datos (ftds, views, duration, etc.) o si el dateKey viene de un entregable real
     // Verificar si el dateKey está en los datos originales
-    const hasData = value.ftds > 0 || value.views > 0 || value.avgViewers > 0 || 
-                    value.peakViewers > 0 || value.minutesWatched > 0 || 
-                    value.likes > 0 || value.comments > 0;
-    
+    const hasData = value.ftds > 0 || value.views > 0 || value.avgViewers > 0 ||
+                    value.peakViewers > 0 || value.minutesWatched > 0 ||
+                    value.likes > 0 || value.comments > 0 || value.duration > 0;
+
     // También verificar si este dateKey existe en los datos originales
     const existsInData = filteredData.some(campaign => {
       if (!campaign.entregables_fecha) return false;
@@ -601,7 +633,7 @@ const chartData = computed(() => {
       }
       return false;
     });
-    
+
     return hasData || existsInData;
   });
   
@@ -616,15 +648,16 @@ const chartData = computed(() => {
     return formatDateLabel(key);
   });
   
-  // Almacenar información de clientes y fechas para el tooltip
+  // Almacenar información de clientes, fechas y timestamps para el tooltip
   const dateInfo = {};
   sortedEntries.forEach(([key, value]) => {
     dateInfo[key] = {
       date: key,
-      clients: value.clients || []
+      clients: value.clients || [],
+      timestamps: value.timestamps || []
     };
   });
-  
+
   // Guardar en ref para acceso en tooltip
   chartDateInfo.value = dateInfo;
   
@@ -650,7 +683,8 @@ const chartData = computed(() => {
         pointHoverRadius: 6,
         fill: false,
         tension: 0.4,
-        spanGaps: false
+        spanGaps: false,
+        yAxisID: metric.yAxisID // Asignar al eje Y correspondiente
       };
     });
 
@@ -819,38 +853,84 @@ const createChart = () => {
                 const value = context.parsed.y || 0;
                 return `${label}: ${value.toLocaleString('en-US')}`;
               },
-              afterBody: function(context) {
-                // Mostrar información del cliente
+              afterBody: function (context) {
                 const dataIndex = context[0].dataIndex;
                 const dateKeys = Object.keys(chartDateInfo.value);
-                if (dateKeys[dataIndex]) {
-                  const dateKey = dateKeys[dataIndex];
-                  const dateInfo = chartDateInfo.value[dateKey];
-                  if (dateInfo && dateInfo.clients && dateInfo.clients.length > 0) {
-                    const clients = dateInfo.clients;
-                    // Mostrar solo el primer cliente (o todos si hay pocos)
-                    if (clients.length === 1) {
-                      const client = clients[0];
-                      return [
-                        `Client: ${client.cliente}`,
-                        `Talent: ${client.talento}`
-                      ];
-                    } else if (clients.length <= 3) {
-                      // Mostrar todos si hay 3 o menos
-                      return clients.map(c => `Client: ${c.cliente} | Talent: ${c.talento}`);
-                    } else {
-                      // Si hay más de 3, mostrar solo el primero
-                      const client = clients[0];
-                      return [
-                        `Client: ${client.cliente}`,
-                        `Talent: ${client.talento}`,
-                        `(+${clients.length - 1} more)`
-                      ];
-                    }
+                const result = [];
+
+                if (!dateKeys[dataIndex]) return result;
+
+                const dateKey = dateKeys[dataIndex];
+                const info = chartDateInfo.value[dateKey];
+
+                // Formatear timestamp a HH:MM (UTC)
+                const formatTime = (timestamp) => {
+                  if (!timestamp || timestamp === '-') return '-';
+                  try {
+                    const date = new Date(timestamp);
+                    if (isNaN(date.getTime())) return timestamp;
+                    const hours = String(date.getUTCHours()).padStart(2, '0');
+                    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                    return `${hours}:${minutes}`;
+                  } catch (e) {
+                    return timestamp;
                   }
+                };
+
+                // Formatear duración en formato legible (Xh Ym)
+                const formatDuration = (minutes) => {
+                  if (!minutes || minutes === 0) return '0m';
+                  const hours = Math.floor(minutes / 60);
+                  const mins = Math.round(minutes % 60);
+                  if (hours > 0) {
+                    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+                  }
+                  return `${mins}m`;
+                };
+
+                // Header con fecha del punto
+                const [year, month, day] = dateKey.split('-');
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December'];
+                const monthIndex = parseInt(month) - 1;
+                result.push('');
+                result.push(`${day} ${monthNames[monthIndex]} ${year}`);
+
+                // Sección Cliente & Talento
+                if (info.clients && info.clients.length) {
+                  result.push('');
+                  result.push('Client & Talent:');
+                  info.clients.forEach(c => {
+                    result.push(`   ${c.cliente}`);
+                    result.push(`   ${c.talento}`);
+                  });
                 }
-                return [];
+
+                // Sección Entregables (deliverables)
+                if (info.timestamps && info.timestamps.length) {
+                  result.push('');
+                  
+                  info.timestamps.forEach((t, i) => {
+                    const start = formatTime(t.timestamp_inicio);
+                    const end = formatTime(t.Timestamp_fin);
+                    const dur = formatDuration(t.duration);
+                    
+                    // Header del entregable
+                    result.push(`Deliverable: #${i + 1}`);
+                    
+                    // Horario y duración en una línea compacta
+                    if (start !== '-' && end !== '-') {
+                      result.push(`${start} - ${end} (${dur})`);
+                    } else {
+                      result.push(`Duration: ${dur}`);
+                    }
+                  });
+                }
+
+                return result;
               }
+
+
             }
           }
         },
@@ -871,6 +951,18 @@ const createChart = () => {
           }
           },
           y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Conversions & Duration',
+              color: textColor,
+              font: {
+                size: 11,
+                weight: '600'
+              }
+            },
             grid: {
               color: 'rgba(255, 255, 255, 0.05)',
               drawBorder: false
@@ -887,6 +979,38 @@ const createChart = () => {
             },
             padding: 8
           },
+            beginAtZero: true,
+            min: 0
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Engagement Metrics',
+              color: textColor,
+              font: {
+                size: 11,
+                weight: '600'
+              }
+            },
+            grid: {
+              drawOnChartArea: false, // No dibujar líneas de grid para evitar superposición
+              drawBorder: false
+            },
+            ticks: {
+              color: textColor,
+              font: {
+                size: 10,
+                weight: '500'
+              },
+              callback: function(value) {
+                if (value === 0) return '0';
+                return value.toLocaleString('en-US');
+              },
+              padding: 8
+            },
             beginAtZero: true,
             min: 0
           }
@@ -1030,7 +1154,7 @@ onBeforeUnmount(() => {
 .chart-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--color-white);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;

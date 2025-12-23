@@ -88,6 +88,7 @@
           <button
             @click="toggleDropdown('source')"
             :class="['filter-btn', { 'filter-btn-active': localFilters.source !== 'all' }]"
+            :disabled="localFilters.campaign === 'all'"
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -111,34 +112,23 @@
               All platforms
             </button>
             <button
-              @click="selectFilter('source', 'youtube')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'youtube' }]"
+              v-for="platform in availablePlatforms"
+              :key="platform"
+              @click="selectFilter('source', platform)"
+              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === platform }]"
               type="button"
             >
-              YouTube
-            </button>
-            <button
-              @click="selectFilter('source', 'kick')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'kick' }]"
-              type="button"
-            >
-              Kick
-            </button>
-            <button
-              @click="selectFilter('source', 'twitch')"
-              :class="['dropdown-item', { 'dropdown-item-active': localFilters.source === 'twitch' }]"
-              type="button"
-            >
-              Twitch
+              {{ getPlatformLabel(platform) }}
             </button>
           </div>
         </div>
 
         <!-- Botón Talento -->
         <div class="filter-button-group">
-          <button 
+          <button
             @click="toggleDropdown('talent')"
             :class="['filter-btn', { 'filter-btn-active': localFilters.talent !== 'all' }]"
+            :disabled="localFilters.source === 'all'"
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -285,6 +275,10 @@ const props = defineProps({
     default: () => []
   },
   availableCampaigns: {
+    type: Array,
+    default: () => []
+  },
+  availablePlatforms: {
     type: Array,
     default: () => []
   },

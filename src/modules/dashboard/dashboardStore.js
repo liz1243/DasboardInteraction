@@ -24,9 +24,54 @@ export const useDashboardStore = defineStore('dashboard', () => {
   });
 
   // Computed - Campañas filtradas
-  const filteredCampaigns = computed(() => {
-    return filterCampaigns(campaigns.value, filters.value);
-  });
+ const filteredCampaigns = computed(() => {
+  let filtered = campaigns.value;
+
+  // Filtrar por cliente
+  if (filters.value.client && filters.value.client !== 'all') {
+    filtered = filtered.filter(c => c.NombreCliente === filters.value.client);
+  }
+
+  // Filtrar por campaña
+  if (filters.value.campaign && filters.value.campaign !== 'all') {
+    filtered = filtered.filter(c => c.NombreCampana === filters.value.campaign);
+  }
+
+  // Filtrar por talento
+  if (filters.value.talent && filters.value.talent !== 'all') {
+    filtered = filtered.filter(c => c.NombreTalento === filters.value.talent);
+  }
+
+  // Filtrar por plataforma
+  if (filters.value.source && filters.value.source !== 'all') {
+    filtered = filtered.filter(c => getPlatformFromUrl(c.PlataformaTalento) === filters.value.source);
+  }
+
+  // Filtrar por fechas
+  if (filters.value.dateStart || filters.value.dateEnd) {
+    filtered = filtered.filter(c => {
+      if (!c.entregables_fecha) return false;
+      const [y, m, d] = c.entregables_fecha.split('-').map(Number);
+      const campaignDate = new Date(y, m - 1, d);
+
+      if (filters.value.dateStart) {
+        const start = new Date(filters.value.dateStart);
+        start.setHours(0, 0, 0, 0);
+        if (campaignDate < start) return false;
+      }
+      if (filters.value.dateEnd) {
+        const end = new Date(filters.value.dateEnd);
+        end.setHours(23, 59, 59, 999);
+        if (campaignDate > end) return false;
+      }
+
+      return true;
+    });
+  }
+
+  return filtered;
+});
+
 
   // Filtrar campañas por plataforma seleccionada (también aplica filtro de fechas)
   const campaignsBySource = computed(() => {
@@ -73,21 +118,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return filtered;
   });
 
-  const availableTalents = computed(() => {
-    // Primero filtrar por plataforma (source)
-    let filteredCampaigns = campaignsBySource.value;
-    
-    // Luego filtrar por cliente seleccionado si aplica
-    const selectedClient = filters.value.client;
-    if (selectedClient && selectedClient !== 'all') {
-      filteredCampaigns = filteredCampaigns.filter(c => c.NombreCliente === selectedClient);
-    }
-    
-    return getAvailableTalents(filteredCampaigns);
-  });
-
+  // Clientes disponibles (siempre muestra todos)
   const availableClients = computed(() => {
-    // Obtener clientes únicos de todas las campañas
     const clientsSet = new Set();
     campaigns.value.forEach(campaign => {
       if (campaign.NombreCliente) {
@@ -97,23 +129,80 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return Array.from(clientsSet).sort();
   });
 
+  // Campañas disponibles (filtradas por cliente)
   const availableCampaigns = computed(() => {
-    // Filtrar campañas por cliente seleccionado
-    let filteredCampaigns = campaigns.value;
+    let filtered = campaigns.value;
 
-    const selectedClient = filters.value.client;
-    if (selectedClient && selectedClient !== 'all') {
-      filteredCampaigns = filteredCampaigns.filter(c => c.NombreCliente === selectedClient);
+    if (filters.value.client && filters.value.client !== 'all') {
+      filtered = filtered.filter(c => c.NombreCliente === filters.value.client);
     }
 
-    // Obtener nombres de campaña únicos
-    const campaignsSet = new Set();
-    filteredCampaigns.forEach(campaign => {
-      if (campaign.NombreCampana) {
-        campaignsSet.add(campaign.NombreCampana);
+    return Array.from(new Set(filtered.map(c => c.NombreCampana))).sort();
+  });
+
+  // Plataformas disponibles (filtradas por cliente y campaña)
+  const availablePlatforms = computed(() => {
+    let filtered = campaigns.value;
+
+    if (filters.value.client && filters.value.client !== 'all') {
+      filtered = filtered.filter(c => c.NombreCliente === filters.value.client);
+    }
+    if (filters.value.campaign && filters.value.campaign !== 'all') {
+      filtered = filtered.filter(c => c.NombreCampana === filters.value.campaign);
+    }
+
+    const platformsSet = new Set();
+    filtered.forEach(campaign => {
+      const platform = getPlatformFromUrl(campaign.PlataformaTalento);
+      if (platform) {
+        platformsSet.add(platform);
       }
     });
-    return Array.from(campaignsSet).sort();
+    return Array.from(platformsSet).sort();
+  });
+
+  // Talentos disponibles (filtrados por cliente, campaña y plataforma)
+  const availableTalents = computed(() => {
+    let filtered = campaigns.value;
+
+    if (filters.value.client && filters.value.client !== 'all') {
+      filtered = filtered.filter(c => c.NombreCliente === filters.value.client);
+    }
+    if (filters.value.campaign && filters.value.campaign !== 'all') {
+      filtered = filtered.filter(c => c.NombreCampana === filters.value.campaign);
+    }
+    if (filters.value.source && filters.value.source !== 'all') {
+      filtered = filtered.filter(c => getPlatformFromUrl(c.PlataformaTalento) === filters.value.source);
+    }
+
+    return Array.from(new Set(filtered.map(c => c.NombreTalento))).sort();
+  });
+
+  // Función para calcular duración en minutos
+  const calculateDurationInMinutes = (campaign) => {
+    if (!campaign.timestamp_inicio || !campaign.Timestamp_fin) {
+      return 0;
+    }
+
+    const start = new Date(campaign.timestamp_inicio);
+    const end = new Date(campaign.Timestamp_fin);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+      return 0;
+    }
+
+    return Math.round((end - start) / (1000 * 60));
+  };
+
+  const filteredCampaignsWithDuration = computed(() => {
+    return filteredCampaigns.value.map(campaign => {
+      const duration = calculateDurationInMinutes(campaign);
+
+      return {
+        ...campaign,
+        duration
+      };
+    });
   });
 
   // Acciones
@@ -159,13 +248,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
     // Estado
     campaigns,
     filteredCampaigns,
+    filteredCampaignsWithDuration,
     loading,
     error,
     filters,
     // Computed
-    availableTalents,
     availableClients,
     availableCampaigns,
+    availablePlatforms,
+    availableTalents,
     // Acciones
     setCampaigns,
     setFilters,

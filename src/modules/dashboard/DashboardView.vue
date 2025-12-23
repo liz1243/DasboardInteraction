@@ -15,6 +15,7 @@
         :filters="dashboardStore.filters"
         :available-clients="dashboardStore.availableClients"
         :available-campaigns="dashboardStore.availableCampaigns"
+        :available-platforms="dashboardStore.availablePlatforms"
         :available-talents="dashboardStore.availableTalents"
         @update-filters="handleUpdateFilters"
         @clear-filters="handleClearFilters"
@@ -23,8 +24,7 @@
     <!-- KPIs -->
     <div class="kpis-grid" v-if="dashboardStore.campaigns.length > 0" :key="`kpis-${kpisRefreshKey}`">
       <KpiCard
-        v-if="ftdsData.totalFTDs > 0"
-        title="Total FTDs"
+        title="Total Conversions"
         :value="ftdsData.totalFTDs"
         color="cyan"
         tooltip="First time depositors for iGaming, crypto and trading campaigns, first user play for gaming campaigns."
@@ -37,7 +37,6 @@
         </template>
       </KpiCard>
       <KpiCard
-        v-if="ftdsData.metaProgress > 0"
         title="CPA Target %"
         :value="ftdsData.metaProgress"
         format="percentage"
@@ -52,11 +51,10 @@
         </template>
       </KpiCard>
       <KpiCard
-        v-if="ftdsData.avgTBA > 0"
         title="Average CPA"
         :value="ftdsData.avgTBA"
         format="currency"
-        color="pink"
+        color="green"
         tooltip="Average cost per acquisition calculated from campaign budget and obtained FTDs."
       >
         <template #icon>
@@ -67,7 +65,6 @@
         </template>
       </KpiCard>
       <KpiCard
-        v-if="ftdsData.topTalent && ftdsData.topTalent !== '-'"
         title="Top Talent"
         :value="ftdsData.topTalent"
         color="blue"
@@ -81,7 +78,6 @@
         </template>
       </KpiCard>
       <KpiCard
-        v-if="ftdsData.topPlatform && ftdsData.topPlatform !== 'N/A' && ftdsData.topPlatformFTDs > 0"
         title="Top Channel"
         :value="ftdsData.topPlatform"
         color="cyan"
@@ -97,10 +93,9 @@
         </template>
       </KpiCard>
       <KpiCard
-        v-if="ftdsData.rng > 0"
         title="Revenue"
         :value="ftdsData.rng"
-        color="pink"
+        color="green"
         tooltip="Net gaming revenue generated from campaigns."
       >
         <template #icon>
@@ -110,7 +105,6 @@
         </template>
       </KpiCard>
       <KpiCard
-        v-if="ftdsData.totalDeposits > 0"
         title="Deposits"
         :value="ftdsData.totalDeposits"
         format="currency"
@@ -132,7 +126,7 @@
     <div class="chart-section" v-if="dashboardStore.campaigns.length > 0">
       <div class="chart-wrapper">
         <ChartTimeSeriesMultiMetrics 
-          :data="dashboardStore.filteredCampaigns" 
+          :data="dashboardStore.filteredCampaignsWithDuration" 
           :selected-platform-from-store="dashboardStore.filters.source"
         />
       </div>
@@ -313,7 +307,7 @@ const ftdsData = computed(() => {
   // Total Deposits (suma de campañas únicas)
   const totalDeposits = uniqueCampaignsArray.reduce((sum, c) => sum + c.Deposits, 0);
 
-  return {
+  const result = {
     totalFTDs,
     targetFTDs,
     metaProgress: Number(metaProgress.toFixed(1)),
@@ -325,6 +319,14 @@ const ftdsData = computed(() => {
     rng,
     totalDeposits
   };
+
+  console.log('=== FTDs Data Debug ===');
+  console.log('Total campaigns:', campaigns.length);
+  console.log('Unique campaigns:', uniqueCampaigns.size);
+  console.log('FTDs Data:', result);
+  console.log('Sample campaign:', campaigns[0]);
+
+  return result;
 });
 
 // Normalizar datos del JSON (agregar campos faltantes solo si son necesarios)
@@ -409,13 +411,20 @@ onMounted(async () => {
 });
 
 const handleUpdateFilters = (newFilters) => {
-  dashboardStore.setFilters(newFilters);
-  // Scroll al inicio para mostrar la actualización desde el título
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  dashboardStore.filters = newFilters;
+  // Aquí puedes filtrar los datos del dashboard según los filtros seleccionados
 };
 
 const handleClearFilters = () => {
-  dashboardStore.resetFilters();
+  dashboardStore.filters = {
+    client: 'all',
+    campaign: 'all',
+    talent: 'all',
+    source: 'all',
+    dateStart: null,
+    dateEnd: null
+  };
+  // Resetear la vista del dashboard si es necesario
 };
 
 const handleSearchUpdate = (searchQuery) => {
@@ -444,7 +453,7 @@ const handleSearchUpdate = (searchQuery) => {
 
 .dashboard-title {
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-pink) 100%);
+  background: linear-gradient(135deg, var(--color-white) 0%, var(--color-white) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
